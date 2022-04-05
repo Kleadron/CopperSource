@@ -16,7 +16,9 @@
 # Mono auto generated files
 mono_crash.*
 
-CopperSource/CopperSourceContent/
+CopperSource/CopperSourceContent/Maps/
+CopperSource/CopperSourceContent/Textures/Maptextures/
+CopperSource/CopperSourceContent/Textures/ai_detail.png
 
 # Build results
 [Dd]ebug/
