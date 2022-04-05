@@ -9,7 +9,7 @@ namespace CopperSource
 {
     [Serializable]
     [StructLayout(LayoutKind.Sequential, Pack = 1)]
-    public struct VertexPositionNormalDualTexture : IVertexType
+    public struct WorldVertex : IVertexType
     {
         #region Private Properties
 
@@ -29,6 +29,8 @@ namespace CopperSource
         public Vector3 Normal;
         public Vector2 TextureCoordinate1;
         public Vector2 TextureCoordinate2;
+        //public Vector3 Binormal;
+        //public Vector3 Tangent;
 
         #endregion
 
@@ -40,7 +42,7 @@ namespace CopperSource
 
         #region Private Static Constructor
 
-        static VertexPositionNormalDualTexture()
+        static WorldVertex()
         {
             VertexDeclaration = new VertexDeclaration(
                 new VertexElement[]
@@ -68,7 +70,19 @@ namespace CopperSource
 						VertexElementFormat.Vector2,
 						VertexElementUsage.TextureCoordinate,
 						1
-					)
+					),
+                    //new VertexElement(
+                    //    40,
+                    //    VertexElementFormat.Vector3,
+                    //    VertexElementUsage.Binormal,
+                    //    0
+                    //),
+                    //new VertexElement(
+                    //    52,
+                    //    VertexElementFormat.Vector3,
+                    //    VertexElementUsage.Tangent,
+                    //    0
+                    //),
 				}
             );
         }
@@ -77,7 +91,7 @@ namespace CopperSource
 
         #region Public Constructor
 
-        public VertexPositionNormalDualTexture(
+        public WorldVertex(
             Vector3 position,
             Vector3 normal,
             Vector2 textureCoordinate1,
@@ -88,6 +102,8 @@ namespace CopperSource
             Normal = normal;
             TextureCoordinate1 = textureCoordinate1;
             TextureCoordinate2 = textureCoordinate2;
+            //Binormal = Vector3.Zero;
+            //Tangent = Vector3.Zero;
         }
 
         #endregion
@@ -111,7 +127,7 @@ namespace CopperSource
             );
         }
 
-        public static bool operator ==(VertexPositionNormalDualTexture left, VertexPositionNormalDualTexture right)
+        public static bool operator ==(WorldVertex left, WorldVertex right)
         {
             return ((left.Position == right.Position) &&
                     (left.Normal == right.Normal) &&
@@ -119,7 +135,7 @@ namespace CopperSource
                     (left.TextureCoordinate2 == right.TextureCoordinate2));
         }
 
-        public static bool operator !=(VertexPositionNormalDualTexture left, VertexPositionNormalDualTexture right)
+        public static bool operator !=(WorldVertex left, WorldVertex right)
         {
             return !(left == right);
         }
@@ -134,7 +150,7 @@ namespace CopperSource
             {
                 return false;
             }
-            return (this == ((VertexPositionNormalDualTexture)obj));
+            return (this == ((WorldVertex)obj));
         }
 
         #endregion

@@ -18,15 +18,15 @@ namespace CopperSource
         public LightmapAtlas(GraphicsDevice device, List<LMTex> textures, byte[] lightmapData)
         {
             this.device = device;
-            textures.Sort(SortFuncByHeight);
+            textures.Sort(SortFuncBySize);
 
             // The lightmap data is RGB!
             // The texture's SurfaceFormat is RGBA!
             texData = new byte[PAGE_SIZE * PAGE_SIZE * 4];
         }
 
-        // test this
-        int SortFuncByHeight(LMTex left, LMTex right)
+        // first height then width
+        int SortFuncBySize(LMTex left, LMTex right)
         {
             if (left.height > right.height)
                 return -1;
@@ -34,6 +34,37 @@ namespace CopperSource
                 return 1;
             return 0;
         }
+
+        //int CreateLightmapTexture(byte[] lightmapData, int offset, int width, int height)
+        //{
+        //    //Console.WriteLine(width + "x" + height);
+
+        //    int texIndex = lightmapList.Count;
+        //    Texture2D tex = new Texture2D(GraphicsDevice, width, height, false, SurfaceFormat.Color);
+        //    lightmapList.Add(tex);
+
+        //    Color[] colors = new Color[width * height];
+        //    byte[] lmData = lightmapData;
+
+        //    for (int y = 0; y < height; y++)
+        //    {
+        //        for (int x = 0; x < width; x++)
+        //        {
+        //            int dataIndex = (x + (y * width)) * 3;
+        //            int colorIndex = (x + (y * width));
+        //            Color c = Color.White;
+        //            c.R = lmData[offset + dataIndex];
+        //            c.G = lmData[offset + dataIndex + 1];
+        //            c.B = lmData[offset + dataIndex + 2];
+
+        //            colors[colorIndex] = c;
+        //        }
+        //    }
+
+        //    tex.SetData(colors);
+
+        //    return texIndex;
+        //}
     }
 
     public class LMTex

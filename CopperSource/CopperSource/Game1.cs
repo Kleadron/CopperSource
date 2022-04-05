@@ -41,7 +41,7 @@ namespace CopperSource
         VertexBuffer vb;
         IndexBuffer ib;
 
-        public List<VertexPositionNormalDualTexture> vertList = new List<VertexPositionNormalDualTexture>();
+        public List<WorldVertex> vertList = new List<WorldVertex>();
         public List<ushort> indexList = new List<ushort>();
 
         Face[] mapFaces;
@@ -80,14 +80,24 @@ namespace CopperSource
         int frameCounter = 0;
         TimeSpan elapsedTime = TimeSpan.Zero;
 
+        float fogStart = 5000;
+        float fogEnd = 11000;
+        float cameraClipDistance = 15000;
+
+        Color skyColor = Color.SkyBlue;
+
         public Game1()
         {
             //Vector3 v = DataHelper.ValueToVector3("3.0 4.1 333");
 
+            Point res = new Point(1280, 720);
+
             graphics = new GraphicsDeviceManager(this);
-            graphics.PreferredBackBufferWidth = 720;
-            graphics.PreferredBackBufferHeight = 480;
+            graphics.PreferredBackBufferWidth = res.X;
+            graphics.PreferredBackBufferHeight = res.Y;
             graphics.PreferMultiSampling = false;
+
+            KConsole.SetResolution(res.X, res.Y);
 
             Content.RootDirectory = "Content";
             IsMouseVisible = true;
@@ -251,8 +261,10 @@ namespace CopperSource
             Node searchNode = rootNode;
             while (true)
             {
+                float dot;
+                Vector3.Dot(ref searchNode.plane.Normal, ref pos, out dot);
                 // is the position in front or behind of the plane
-                if (Vector3.Dot(searchNode.plane.Normal, pos) > searchNode.plane.D)
+                if (dot > searchNode.plane.D)
                 {
                     // in front of parition plane
                     if (searchNode.frontLeaf != null)
@@ -361,7 +373,7 @@ namespace CopperSource
             worldEffect.TextureEnabled = true;
             grid = worldEffect.Texture = Content.Load<Texture2D>("Textures/tiledark_s");
 
-            BspFile mapFile = new BspFile("Content/Maps/arctic_incident_1.bsp");
+            BspFile mapFile = new BspFile("Content/Maps/de_dust2.bsp");
             //File.WriteAllText("entities.txt", mapFile.entityData);
 
             missingTex = new BspFile.MipTexture();
@@ -374,6 +386,11 @@ namespace CopperSource
             //lightmapWorldEffect.DetailTextureEnabled = true;
             lightmapWorldEffect.DetailScale = new Vector2(3, 3);
             lightmapWorldEffect.DetailTexture = Content.Load<Texture2D>("Textures/ai_detail");
+
+            lightmapWorldEffect.FogEnabled = true;
+            lightmapWorldEffect.FogStart = fogStart;
+            lightmapWorldEffect.FogEnd = fogEnd;
+            lightmapWorldEffect.FogColor = skyColor.ToVector3();
 
             //textureNameToID = new Dictionary<string, int>();
             
@@ -478,7 +495,7 @@ namespace CopperSource
             Console.WriteLine(nodes.Length + " total bsp nodes");
             Console.WriteLine(leaves.Length + " total bsp leaves");
 
-            vb = new VertexBuffer(GraphicsDevice, VertexPositionNormalDualTexture.VertexDeclaration, vertList.Count, BufferUsage.WriteOnly);
+            vb = new VertexBuffer(GraphicsDevice, WorldVertex.VertexDeclaration, vertList.Count, BufferUsage.WriteOnly);
             vb.SetData(vertList.ToArray());
             vertList = null;
 
@@ -634,7 +651,7 @@ namespace CopperSource
             // create vertices
             for (int k = 0; k < f_points.Count; k++)
             {
-                vertList.Add(new VertexPositionNormalDualTexture(f_points[k], normal, f_uvs[k], f_luvs[k]));
+                vertList.Add(new WorldVertex(f_points[k], normal, f_uvs[k], f_luvs[k]));
                 mf.numVerts++;
             }
 
@@ -681,6 +698,9 @@ namespace CopperSource
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
 
+            Input.Update((float)gameTime.ElapsedGameTime.TotalSeconds, (float)gameTime.TotalGameTime.TotalSeconds);
+            KConsole.Update();
+
             // TODO: Add your update logic here
             float delta = (float)gameTime.ElapsedGameTime.TotalSeconds * 1;
 
@@ -688,39 +708,46 @@ namespace CopperSource
             //space.Update();
             KeyboardState kb = Keyboard.GetState();
 
-            if (kb.IsKeyDown(Keys.Left))
-                cameraYawAngle += delta * 90f;
-            if (kb.IsKeyDown(Keys.Right))
-                cameraYawAngle -= delta * 90f;
+            if (!KConsole.Active)
+            {
+                if (kb.IsKeyDown(Keys.Left))
+                    cameraYawAngle += delta * 90f;
+                if (kb.IsKeyDown(Keys.Right))
+                    cameraYawAngle -= delta * 90f;
 
-            if (kb.IsKeyDown(Keys.Up))
-                cameraPitchAngle -= delta * 45f;
-            if (kb.IsKeyDown(Keys.Down))
-                cameraPitchAngle += delta * 45f;
+                if (kb.IsKeyDown(Keys.Up))
+                    cameraPitchAngle -= delta * 45f;
+                if (kb.IsKeyDown(Keys.Down))
+                    cameraPitchAngle += delta * 45f;
 
-            if (cameraYawAngle < 0f)
-                cameraYawAngle += 360f;
-            cameraYawAngle %= 360f;
+                if (cameraYawAngle < 0f)
+                    cameraYawAngle += 360f;
+                cameraYawAngle %= 360f;
+            }
 
             Vector3 proposedMove = Vector3.Zero;
 
             float walkSpeed = 190f;
 
-            if (kb.IsKeyDown(Keys.LeftShift))
-                walkSpeed *= 3f;
+            if (!KConsole.Active)
+            {
+                if (kb.IsKeyDown(Keys.LeftShift))
+                    walkSpeed *= 3f;
 
-            if (kb.IsKeyDown(Keys.Q))
-                proposedMove -= Vector3.UnitZ;
-            if (kb.IsKeyDown(Keys.E))
-                proposedMove += Vector3.UnitZ;
-            if (kb.IsKeyDown(Keys.W))
-                proposedMove += Vector3.UnitX;
-            if (kb.IsKeyDown(Keys.S))
-                proposedMove -= Vector3.UnitX;
-            if (kb.IsKeyDown(Keys.A))
-                proposedMove += Vector3.UnitY;
-            if (kb.IsKeyDown(Keys.D))
-                proposedMove -= Vector3.UnitY;
+                if (kb.IsKeyDown(Keys.Q))
+                    proposedMove -= Vector3.UnitZ;
+                if (kb.IsKeyDown(Keys.E))
+                    proposedMove += Vector3.UnitZ;
+                if (kb.IsKeyDown(Keys.W))
+                    proposedMove += Vector3.UnitX;
+                if (kb.IsKeyDown(Keys.S))
+                    proposedMove -= Vector3.UnitX;
+                if (kb.IsKeyDown(Keys.A))
+                    proposedMove += Vector3.UnitY;
+                if (kb.IsKeyDown(Keys.D))
+                    proposedMove -= Vector3.UnitY;
+
+            }
 
             if (proposedMove.LengthSquared() > 0f)
             {
@@ -729,19 +756,22 @@ namespace CopperSource
                 playerPosition += proposedMove * delta * walkSpeed;
             }
 
-            if (kb.IsKeyDown(Keys.D1) && oldKB.IsKeyUp(Keys.D1))
+            if (!KConsole.Active)
             {
-                wireframeOn = !wireframeOn;
-            }
+                if (kb.IsKeyDown(Keys.D1) && oldKB.IsKeyUp(Keys.D1))
+                {
+                    wireframeOn = !wireframeOn;
+                }
 
-            if (kb.IsKeyDown(Keys.D2) && oldKB.IsKeyUp(Keys.D2))
-            {
-                freezeVisibility = !freezeVisibility;
-            }
+                if (kb.IsKeyDown(Keys.D2) && oldKB.IsKeyUp(Keys.D2))
+                {
+                    freezeVisibility = !freezeVisibility;
+                }
 
-            if (kb.IsKeyDown(Keys.D3) && oldKB.IsKeyUp(Keys.D3))
-            {
-                defaultLighting = !defaultLighting;
+                if (kb.IsKeyDown(Keys.D3) && oldKB.IsKeyUp(Keys.D3))
+                {
+                    defaultLighting = !defaultLighting;
+                }
             }
             
             base.Update(gameTime);
@@ -850,8 +880,10 @@ namespace CopperSource
         // draws the visible leaves of a bsp tree, front to back
         void RecursiveTreeDraw(Node node, Vector3 pos, bool[] vislist)
         {
+            float dot;
+            Vector3.Dot(ref node.plane.Normal, ref pos, out dot);
             // in front
-            if (Vector3.Dot(node.plane.Normal, pos) > node.plane.D)
+            if (dot > node.plane.D)
             {
                 if (node.frontNode != null)
                     RecursiveTreeDraw(node.frontNode, pos, vislist);
@@ -880,8 +912,10 @@ namespace CopperSource
         // draws all leaves of a bsp tree, front to back
         void RecursiveTreeDraw(Node node, Vector3 pos)
         {
+            float dot;
+            Vector3.Dot(ref node.plane.Normal, ref pos, out dot);
             // in front
-            if (Vector3.Dot(node.plane.Normal, pos) > node.plane.D)
+            if (dot > node.plane.D)
             {
                 if (node.frontNode != null)
                     RecursiveTreeDraw(node.frontNode, pos);
@@ -935,7 +969,7 @@ namespace CopperSource
             Vector3 normal = Vector3.TransformNormal(Vector3.UnitX, cameraRotation);
             view = Matrix.CreateLookAt(playerPosition + cameraOffset, playerPosition + cameraOffset + normal, Vector3.UnitZ);
 
-            projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(fov), GraphicsDevice.Viewport.AspectRatio, 1f, 20000f);
+            projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(fov), GraphicsDevice.Viewport.AspectRatio, 1f, cameraClipDistance);
 
             viewFrustum = new BoundingFrustum(view * projection);
 
@@ -1004,7 +1038,7 @@ namespace CopperSource
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(Color.DarkBlue);
+            GraphicsDevice.Clear(skyColor);
 
             //Viewport defaultViewport = GraphicsDevice.Viewport;
             //Viewport splitTL = new Viewport(defaultViewport.X, defaultViewport.Y, defaultViewport.Width / 2, defaultViewport.Height / 2);
@@ -1034,6 +1068,9 @@ namespace CopperSource
                 SamplerState.PointWrap, 
                 DepthStencilState.None, 
                 RasterizerState.CullCounterClockwise);
+
+            KConsole.SetResolution(GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
+            KConsole.Draw(spriteBatch, font, (float)gameTime.ElapsedGameTime.TotalSeconds, (float)gameTime.TotalGameTime.TotalSeconds);
 
             spriteBatch.DrawString(font, "Camera position: " + playerPosition.ToString(), Vector2.Zero + Vector2.One, Color.Black);
             spriteBatch.DrawString(font, "Camera position: " + playerPosition.ToString(), Vector2.Zero, Color.White);

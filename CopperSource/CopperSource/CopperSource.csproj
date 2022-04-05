@@ -124,6 +124,8 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Game1.cs" />
+    <Compile Include="system\Input.cs" />
+    <Compile Include="system\KConsole.cs" />
     <Compile Include="VertexPositionNormalDualTexture.cs" />
   </ItemGroup>
   <ItemGroup>

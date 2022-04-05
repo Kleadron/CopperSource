@@ -120,6 +120,7 @@ float4 PSDualTexture(PSInputTx2 pin) : SV_Target0
 
     color.rgb = GammaFunc(color.rgb);
     color *= light * pin.Diffuse;
+	color.a = 1;
     
     ApplyFog(color, pin.Specular.w);
     
@@ -135,6 +136,7 @@ float4 PSDualTextureNoFog(PSInputTx2NoFog pin) : SV_Target0
 
 	color.rgb = GammaFunc(color.rgb);
     color *= light * pin.Diffuse;
+	color.a = 1;
     
     return color;
 }
@@ -152,6 +154,7 @@ float4 PSDualTextureDetail(PSInputTx2 pin) : SV_Target0
 	color *= 2;
 	color *= detail;
     color *= light * pin.Diffuse;
+	color.a = 1;
     
     ApplyFog(color, pin.Specular.w);
     
@@ -170,6 +173,7 @@ float4 PSDualTextureDetailNoFog(PSInputTx2NoFog pin) : SV_Target0
 	color *= 2;
 	color *= detail;
     color *= light * pin.Diffuse;
+	color.a = 1;
     
     return color;
 }
