@@ -6,12 +6,36 @@ using Microsoft.Xna.Framework;
 
 namespace CopperSource.Objects
 {
-    public abstract class GameObject
+    public class Entity
     {
         public string name;
         public string tag; // any data can go here
+        public string classname;
         public Vector3 position;
         public Quaternion rotation;
+        protected Game1 game;
+
+        public Vector3 originOffset;
+        public Vector3 WorldOrigin
+        {
+            get
+            {
+                return position + originOffset;
+            }
+        }
+
+        public bool IsOriginVisible
+        {
+            get
+            {
+                return game.PointIsVisible(WorldOrigin);
+            }
+        }
+
+        public Entity(Game1 game)
+        {
+            this.game = game;
+        }
 
         // key values used for game saves?
         // if inherited, add custom keyvalues to this
@@ -32,6 +56,9 @@ namespace CopperSource.Objects
             {
                 case "name":
                     name = value;
+                    break;
+                case "classname":
+                    classname = value;
                     break;
                 case "tag":
                     tag = value;
@@ -58,6 +85,8 @@ namespace CopperSource.Objects
             {
                 case "name":
                     return name;
+                case "classname":
+                    return classname;
                 case "tag":
                     return tag;
                 case "position":

@@ -165,7 +165,7 @@ namespace CopperSource
         //}
 
         public Header header;
-        public string entityData;
+        public string[] entityData;
         public TextureHeader texHeader;
         public int[] mipTextureOffsets;
         public MipTexture[] textures;
@@ -341,7 +341,9 @@ namespace CopperSource
             reader.BaseStream.Position = header.lumps[LUMP_ENTITIES].offset;
             int size = (int)header.lumps[LUMP_ENTITIES].length;
 
-            entityData = new string(reader.ReadChars(size));
+            string entityLump = new string(reader.ReadChars(size));
+            string[] lines = entityLump.Trim().Split(new char[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            entityData = lines;
 
             //Dictionary<string, string> keyValues = new Dictionary<string, string>();
 

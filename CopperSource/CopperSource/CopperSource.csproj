@@ -111,9 +111,9 @@
     <Compile Include="DataHelper.cs" />
     <Compile Include="EffectHelpers.cs" />
     <Compile Include="IEntityReader.cs" />
-    <Compile Include="Objects\BspObject.cs" />
-    <Compile Include="Objects\Door.cs" />
-    <Compile Include="Objects\GameObject.cs" />
+    <Compile Include="Objects\BrushEntity.cs" />
+    <Compile Include="Objects\BrushEntityDoor.cs" />
+    <Compile Include="Objects\Entity.cs" />
     <Compile Include="Extensions.cs" />
     <Compile Include="BspFile.cs" />
     <Compile Include="Leaf.cs" />

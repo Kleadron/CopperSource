@@ -11,6 +11,7 @@ using Microsoft.Xna.Framework.Media;
 using System.IO;
 using System.Collections;
 using System.Text;
+using CopperSource.Objects;
 
 namespace CopperSource
 {
@@ -25,8 +26,18 @@ namespace CopperSource
         Matrix view;
         Matrix projection;
 
-        Vector3 playerPosition = new Vector3(0, 0, 0);
-        Vector3 visPosition;
+        public Vector3 playerPosition = new Vector3(0, 0, 0);
+        public Vector3 visPosition;
+
+        Matrix modelTransform;
+        public Vector3 TransformedVisPosition
+        {
+            get
+            {
+                return Vector3.Transform(visPosition, modelTransform);
+            }
+        }
+
         float cameraYawAngle = 0f;
         float cameraPitchAngle = 0f;
 
@@ -66,7 +77,7 @@ namespace CopperSource
         bool[] leafVisList;
         Leaf cameraLeaf;
 
-        BspModel[] models;
+        public BspModel[] models;
 
         byte[] visData;
         ushort[] markSurfaces;
@@ -86,6 +97,8 @@ namespace CopperSource
 
         Color skyColor = Color.SkyBlue;
 
+        Entity[] entities;
+
         public Game1()
         {
             //Vector3 v = DataHelper.ValueToVector3("3.0 4.1 333");
@@ -103,8 +116,8 @@ namespace CopperSource
             IsMouseVisible = true;
             Window.AllowUserResizing = true;
 
-            IsFixedTimeStep = false;
-            graphics.SynchronizeWithVerticalRetrace = false;
+            IsFixedTimeStep = true;
+            graphics.SynchronizeWithVerticalRetrace = true;
         }
 
         /// <summary>
@@ -118,6 +131,9 @@ namespace CopperSource
             // TODO: Add your initialization logic here
 
             LoadCameraInfo();
+            entities = new Entity[2048];
+
+            //RenderTarget2D rt = new RenderTarget2D(GraphicsDevice, 10, 10, false, SurfaceFormat.HdrBlendable, DepthFormat.Depth24Stencil8);
 
             base.Initialize();
         }
@@ -256,6 +272,18 @@ namespace CopperSource
             return leaf;
         }
 
+        //public bool BoundingBoxIsVisible(Vector3 pos)
+        //{
+        //    Leaf leaf = GetLeafFromPosition(pos);
+        //    return leafVisList[leaf.id];
+        //}
+
+        public bool PointIsVisible(Vector3 pos)
+        {
+            Leaf leaf = GetLeafFromPosition(pos);
+            return leafVisList[leaf.id];
+        }
+
         public Leaf GetLeafFromPosition(Vector3 pos)
         {
             Node searchNode = rootNode;
@@ -373,7 +401,7 @@ namespace CopperSource
             worldEffect.TextureEnabled = true;
             grid = worldEffect.Texture = Content.Load<Texture2D>("Textures/tiledark_s");
 
-            BspFile mapFile = new BspFile("Content/Maps/de_dust2.bsp");
+            BspFile mapFile = new BspFile("Content/Maps/c1a0.bsp");
             //File.WriteAllText("entities.txt", mapFile.entityData);
 
             missingTex = new BspFile.MipTexture();
@@ -463,7 +491,7 @@ namespace CopperSource
                 mdl.numFaces = model.nFaces;
                 mdl.numLeaves = model.visleafs;
                 mdl.bb = new BoundingBox(model.min, model.max);
-                mdl.rotationalOrigin = model.origin;
+                //mdl.rotationalOrigin = model.origin;
                 mdl.center = model.min + ((mdl.bb.Max - mdl.bb.Min) / 2);
 
                 for (int i = model.firstFace; i < model.firstFace + model.nFaces; i++)
@@ -505,6 +533,64 @@ namespace CopperSource
 
             visData = mapFile.visData;
             markSurfaces = mapFile.markSurfaces;
+
+            int entityLoadIndex = 0;
+            bool readingEntity = false;
+
+            Dictionary<string, string> keyValues = new Dictionary<string, string>();
+
+            for (int i = 0; i < mapFile.entityData.Length; i++)
+            {
+                string line = mapFile.entityData[i];
+                if (line[0] == '{')
+                {
+                    readingEntity = true;
+                    keyValues.Clear();
+                    continue;
+                }
+
+                if (line[0] == '}')
+                {
+                    readingEntity = false;
+                    // make entity
+                    Entity ent = null;
+                    if (keyValues.ContainsKey("model") && keyValues["model"].StartsWith("*"))
+                    {
+                        ent = new BrushEntity(this);
+                    }
+                    else
+                    {
+                        ent = new Entity(this);
+                    }
+                    
+                    foreach(KeyValuePair<string, string> pair in keyValues)
+                    {
+                        ent.SetKeyValue(pair.Key, pair.Value);
+                    }
+                    entities[entityLoadIndex++] = ent;
+                    continue;
+                }
+
+                if (readingEntity)
+                {
+                    int keyStart = line.IndexOf('"', 0);
+                    int keyEnd = line.IndexOf('"', keyStart + 1);
+
+                    string key = line.Substring(keyStart + 1, keyEnd - keyStart - 1);
+
+                    int valueStart = line.IndexOf('"', keyEnd + 1);
+                    int valueEnd = line.IndexOf('"', valueStart + 1);
+
+                    string value = line.Substring(valueStart + 1, valueEnd - valueStart - 1);
+
+                    //Console.WriteLine("Key: " + key);
+                    //Console.WriteLine("Value: " + value);
+                    keyValues[key] = value;
+                    continue;
+                }
+            }
+
+            Console.WriteLine(entityLoadIndex + " entities");
 
             GC.Collect();
         }
@@ -831,6 +917,11 @@ namespace CopperSource
             //if (!leafVisList[leaf.id])
             //    return;
 
+            //ContainmentType contain = viewFrustum.Contains(leaf.bb);
+            //bool canDraw = contain == ContainmentType.Contains || contain == ContainmentType.Intersects;
+            //if (!canDraw)
+            //    return;
+
             for (int surf = leaf.firstMarkSurface; surf < leaf.firstMarkSurface + leaf.nMarkSurfaces; surf++)
             {
                 int markSurface = markSurfaces[surf];
@@ -878,7 +969,7 @@ namespace CopperSource
         //}
 
         // draws the visible leaves of a bsp tree, front to back
-        void RecursiveTreeDraw(Node node, Vector3 pos, bool[] vislist)
+        public void RecursiveTreeDraw(Node node, Vector3 pos, bool[] vislist)
         {
             float dot;
             Vector3.Dot(ref node.plane.Normal, ref pos, out dot);
@@ -909,8 +1000,20 @@ namespace CopperSource
             }
         }
 
+        public void SetModelTransform(Matrix world)
+        {
+            lightmapWorldEffect.World = world;
+            worldEffect.World = world;
+            modelTransform = world;
+        }
+
+        //public void DrawBspModel(BspModel model, Matrix transform)
+        //{
+
+        //}
+
         // draws all leaves of a bsp tree, front to back
-        void RecursiveTreeDraw(Node node, Vector3 pos)
+        public void RecursiveTreeDraw(Node node, Vector3 pos)
         {
             float dot;
             Vector3.Dot(ref node.plane.Normal, ref pos, out dot);
@@ -943,6 +1046,9 @@ namespace CopperSource
 
         void DrawScene(GameTime gameTime, int addRotation, string viewName = null)
         {
+            float delta = (float)gameTime.ElapsedGameTime.TotalSeconds;
+            float total = (float)gameTime.TotalGameTime.TotalSeconds;
+
             GraphicsDevice.DepthStencilState = DepthStencilState.Default;
             GraphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
             if (wireframeOn)
@@ -988,25 +1094,26 @@ namespace CopperSource
                 UpdateVisiblityFromLeaf(cameraLeaf);
 
                 // do frustum check on visible leaves
-                for (int i = 0; i < leaves.Length; i++)
-                {
-                    Leaf leaf = leaves[i];
-                    if (leafVisList[i] && leaf != null)
-                    {
-                        ContainmentType contain = viewFrustum.Contains(leaf.bb);
-                        leafVisList[i] = contain == ContainmentType.Contains || contain == ContainmentType.Intersects;
-                    }
-                    else
-                    {
-                        leafVisList[i] = false;
-                    }
-                }
+                //for (int i = 0; i < leaves.Length; i++)
+                //{
+                //    Leaf leaf = leaves[i];
+                //    if (leafVisList[i] && leaf != null)
+                //    {
+                //        ContainmentType contain = viewFrustum.Contains(leaf.bb);
+                //        leafVisList[i] = contain == ContainmentType.Contains || contain == ContainmentType.Intersects;
+                //    }
+                //    else
+                //    {
+                //        leafVisList[i] = false;
+                //    }
+                //}
             }
 
             GraphicsDevice.SetVertexBuffer(vb);
             GraphicsDevice.Indices = ib;
 
-            RecursiveTreeDraw(rootNode, visPosition, leafVisList);
+            SetModelTransform(Matrix.Identity);
+            RecursiveTreeDraw(rootNode, TransformedVisPosition, leafVisList);
             //for (int i = 1; i < models.Length; i++)
             //{
             //    BspModel model = models[i];
@@ -1021,6 +1128,38 @@ namespace CopperSource
             //        }
             //    }
             //}
+
+            for (int i = 0; i < entities.Length; i++)
+            {
+                if (entities[i] != null)
+                {
+                    entities[i].Draw(delta, total);
+                }
+            }
+
+            spriteBatch.Begin();
+            foreach (Entity entity in entities)
+            {
+                if (entity != null)
+                {
+                    bool isVisible = entity.IsOriginVisible;
+
+                    if (!isVisible)
+                        continue;
+
+                    Vector3 screenPosition = GraphicsDevice.Viewport.Project(entity.WorldOrigin, projection, view, Matrix.Identity);
+                    if (screenPosition.Z >= 0 && screenPosition.Z <= 1)
+                    {
+                        Vector2 labelPos = new Vector2((int)screenPosition.X, (int)screenPosition.Y);
+
+                        spriteBatch.Draw(pixel, new Rectangle((int)labelPos.X - 8, (int)labelPos.Y - 8, 16, 16), Color.DarkRed);
+
+                        spriteBatch.DrawString(font, entity.classname, labelPos + Vector2.One, Color.Black);
+                        spriteBatch.DrawString(font, entity.classname, labelPos, Color.Red);
+                    }
+                }
+            }
+            spriteBatch.End();
 
             if (viewName != null)
             {
