@@ -9,7 +9,7 @@ namespace CopperSource
     public class Leaf
     {
         public int id;
-        //public Node parentNode;
+        public Node parentNode;
         public BoundingBox bb;
         public int firstMarkSurface, nMarkSurfaces;
         public int visCluster;

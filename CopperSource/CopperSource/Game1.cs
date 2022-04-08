@@ -194,6 +194,7 @@ namespace CopperSource
             overlayDSS.DepthBufferWriteEnable = false;
             overlayDSS.DepthBufferEnable = true;
 
+            Window.Title = "CopperSource - " + mapToLoad;
 
             base.Initialize();
         }
@@ -270,11 +271,11 @@ namespace CopperSource
             return texIndex;
         }
 
-        Node BuildNode(BspFile mapData, int index)
+        Node BuildNode(BspFile mapData, int index, Node parent)
         {
             Node node = new Node();
             node.id = index;
-            //node.parentNode = parent;
+            node.parentNode = parent;
             nodes[index] = node;
 
             BspFile.Node mapNode = mapData.nodes[index];
@@ -292,11 +293,11 @@ namespace CopperSource
             if (frontChild <= 0)
             {
                 frontChild = (short)~frontChild;
-                node.frontLeaf = BuildLeaf(mapData, frontChild);
+                node.frontLeaf = BuildLeaf(mapData, frontChild, node);
             }
             else
             {
-                node.frontNode = BuildNode(mapData, frontChild);
+                node.frontNode = BuildNode(mapData, frontChild, node);
             }
 
             short backChild = mapNode.backChild;
@@ -304,21 +305,21 @@ namespace CopperSource
             if (backChild <= 0)
             {
                 backChild = (short)~backChild;
-                node.backLeaf = BuildLeaf(mapData, backChild);
+                node.backLeaf = BuildLeaf(mapData, backChild, node);
             }
             else
             {
-                node.backNode = BuildNode(mapData, backChild);
+                node.backNode = BuildNode(mapData, backChild, node);
             }
 
             return node;
         }
 
-        Leaf BuildLeaf(BspFile mapData, int index)
+        Leaf BuildLeaf(BspFile mapData, int index, Node parent)
         {
             Leaf leaf = new Leaf();
             leaf.id = index;
-            //leaf.parentNode = parent;
+            leaf.parentNode = parent;
             leaves[index] = leaf;
             BspFile.Leaf mapLeaf = mapData.leaves[index];
 
@@ -564,7 +565,7 @@ namespace CopperSource
                     // THIS IS THE END OF A FACE GENERATION LOOP. DO NOT PUT STUFF HERE.
                 }
 
-                mdl.rootNode = BuildNode(mapFile, model.node1);
+                mdl.rootNode = BuildNode(mapFile, model.node1, null);
                 //Console.WriteLine("Generated BSP for model " + mI);
                 models[mI] = mdl;
             }
@@ -992,6 +993,9 @@ namespace CopperSource
             if (face.type == FaceType.DontDraw)
                 return;
 
+            // For some dumbass reason, leaves can overlap with the faces they contain.
+            // So, to "solve" the issue, I'll just check if a face already got queued for rendering.
+            // Faces get checked against a boolean array that is reset every time before queueing happens.
             //if (!textureFaceQueues[face.textureID].Contains(face))
             if (!faceQueued[face.id])
             {
@@ -1256,6 +1260,7 @@ namespace CopperSource
 
                 textureGroupQueue.Enqueue(group);
             }
+            // if no triangles were added don't set data otherwise xna will scream at you
             if (dynamicIndex > 0)
                 dib.SetData(dynamicIndices, 0, dynamicIndex);
 
@@ -1276,6 +1281,7 @@ namespace CopperSource
                 //GraphicsDevice.BlendState = BlendState.Opaque;
                 //GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
+                // set up the appropriate effects
                 if (overdrawView)
                 {
                     overdrawPass.Apply();
@@ -1322,29 +1328,29 @@ namespace CopperSource
             //    }
             //}
 
-            //spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
-            //foreach (Entity entity in entities)
-            //{
-            //    if (entity != null)
-            //    {
-            //        bool isVisible = entity.IsOriginVisible;
+            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
+            foreach (Entity entity in entities)
+            {
+                if (entity != null)
+                {
+                    bool isVisible = entity.IsOriginVisible;
 
-            //        if (!isVisible)
-            //            continue;
+                    if (!isVisible)
+                        continue;
 
-            //        Vector3 screenPosition = GraphicsDevice.Viewport.Project(entity.WorldOrigin, projection, view, Matrix.Identity);
-            //        if (screenPosition.Z >= 0 && screenPosition.Z <= 1)
-            //        {
-            //            Vector2 labelPos = new Vector2((int)screenPosition.X, (int)screenPosition.Y);
+                    Vector3 screenPosition = GraphicsDevice.Viewport.Project(entity.WorldOrigin, projection, view, Matrix.Identity);
+                    if (screenPosition.Z >= 0 && screenPosition.Z <= 1)
+                    {
+                        Vector2 labelPos = new Vector2((int)screenPosition.X, (int)screenPosition.Y);
 
-            //            spriteBatch.Draw(pixel, new Rectangle((int)labelPos.X - 8, (int)labelPos.Y - 8, 16, 16), Color.DarkRed);
+                        spriteBatch.Draw(pixel, new Rectangle((int)labelPos.X - 8, (int)labelPos.Y - 8, 16, 16), Color.DarkRed);
 
-            //            spriteBatch.DrawString(font, entity.classname, labelPos + Vector2.One, Color.Black);
-            //            spriteBatch.DrawString(font, entity.classname, labelPos, Color.Red);
-            //        }
-            //    }
-            //}
-            //spriteBatch.End();
+                        spriteBatch.DrawString(font, entity.classname, labelPos + Vector2.One, Color.Black);
+                        spriteBatch.DrawString(font, entity.classname, labelPos, Color.Red);
+                    }
+                }
+            }
+            spriteBatch.End();
 
             if (viewName != null)
             {
@@ -1447,7 +1453,7 @@ namespace CopperSource
             timerOffsetOdd = false;
             duplicateFaceQueues = 0;
 
-            DrawScene(gameTime, 0, mapToLoad);
+            DrawScene(gameTime, 0);
 
             //GraphicsDevice.Viewport = splitTL;
             //DrawScene(gameTime, 0, "FRONT");
