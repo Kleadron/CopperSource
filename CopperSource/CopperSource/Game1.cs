@@ -448,7 +448,7 @@ namespace CopperSource
             worldEffect = new BasicEffect(GraphicsDevice);
             overdrawEffect = new BasicEffect(GraphicsDevice);
 
-            overdrawEffect.DiffuseColor = Color.LightBlue.ToVector3() * 0.15f;
+            overdrawEffect.DiffuseColor = Color.LightGreen.ToVector3() * 0.15f;
 
             if (true)
             {
@@ -1328,29 +1328,29 @@ namespace CopperSource
             //    }
             //}
 
-            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
-            foreach (Entity entity in entities)
-            {
-                if (entity != null)
-                {
-                    bool isVisible = entity.IsOriginVisible;
+            //spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
+            //foreach (Entity entity in entities)
+            //{
+            //    if (entity != null)
+            //    {
+            //        bool isVisible = entity.IsOriginVisible;
 
-                    if (!isVisible)
-                        continue;
+            //        if (!isVisible)
+            //            continue;
 
-                    Vector3 screenPosition = GraphicsDevice.Viewport.Project(entity.WorldOrigin, projection, view, Matrix.Identity);
-                    if (screenPosition.Z >= 0 && screenPosition.Z <= 1)
-                    {
-                        Vector2 labelPos = new Vector2((int)screenPosition.X, (int)screenPosition.Y);
+            //        Vector3 screenPosition = GraphicsDevice.Viewport.Project(entity.WorldOrigin, projection, view, Matrix.Identity);
+            //        if (screenPosition.Z >= 0 && screenPosition.Z <= 1)
+            //        {
+            //            Vector2 labelPos = new Vector2((int)screenPosition.X, (int)screenPosition.Y);
 
-                        spriteBatch.Draw(pixel, new Rectangle((int)labelPos.X - 8, (int)labelPos.Y - 8, 16, 16), Color.DarkRed);
+            //            spriteBatch.Draw(pixel, new Rectangle((int)labelPos.X - 8, (int)labelPos.Y - 8, 16, 16), Color.DarkRed);
 
-                        spriteBatch.DrawString(font, entity.classname, labelPos + Vector2.One, Color.Black);
-                        spriteBatch.DrawString(font, entity.classname, labelPos, Color.Red);
-                    }
-                }
-            }
-            spriteBatch.End();
+            //            spriteBatch.DrawString(font, entity.classname, labelPos + Vector2.One, Color.Black);
+            //            spriteBatch.DrawString(font, entity.classname, labelPos, Color.Red);
+            //        }
+            //    }
+            //}
+            //spriteBatch.End();
 
             if (viewName != null)
             {
