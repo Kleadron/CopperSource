@@ -1273,17 +1273,6 @@ namespace CopperSource
                 RenderGroup group = textureGroupQueue.Dequeue();
                 //worldEffect.LightingEnabled = true;
 
-                // overdraw test
-                //worldEffect.LightingEnabled = false;
-                //GraphicsDevice.BlendState = BlendState.Additive;
-                //GraphicsDevice.DepthStencilState = overlayDSS;
-                //worldEffect.DiffuseColor = Color.DarkOrange.ToVector3() * 0.2f;
-                //worldEffect.TextureEnabled = false;
-                ////worldEffect.Texture = textures[group.texture];
-                //defaultPass.Apply();
-                //GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, group.start, group.numVerts, group.start, group.triCount);
-                //drawnGroups++;
-
                 //GraphicsDevice.BlendState = BlendState.Opaque;
                 //GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
@@ -1306,15 +1295,6 @@ namespace CopperSource
                 
                 GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, group.start, group.numVerts, group.start, group.triCount);
                 drawnGroups++;
-
-                //worldEffect.LightingEnabled = false;
-                //GraphicsDevice.BlendState = multiplyBS;
-                //GraphicsDevice.DepthStencilState = overlayDSS;
-                //worldEffect.DiffuseColor = Vector3.One * 2;
-                //worldEffect.Texture = detailTex;//textures[group.texture];
-                //defaultPass.Apply();
-                //GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, group.start, group.numVerts, group.start, group.triCount);
-                //drawnGroups++;
             }
             
             // ======================== DRAW DRAW DRAW DRAW
