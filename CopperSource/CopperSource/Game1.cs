@@ -12,6 +12,7 @@ using System.IO;
 using System.Collections;
 using System.Text;
 using CopperSource.Objects;
+using System.Diagnostics;
 
 namespace CopperSource
 {
@@ -41,11 +42,14 @@ namespace CopperSource
         float cameraYawAngle = 0f;
         float cameraPitchAngle = 0f;
 
+        string mapToLoad = "Content/Maps/de_dust2.bsp";
+
         //BspFile mapFile;
         SpriteFont font;
 
         BasicEffect lineEffect;
         BasicEffect worldEffect;
+        BasicEffect overdrawEffect;
         //DualTextureEffect lightmapWorldEffect;
         LightmapEffect lightmapWorldEffect;
 
@@ -53,7 +57,7 @@ namespace CopperSource
         IndexBuffer ib;
 
         public List<WorldVertex> vertList = new List<WorldVertex>();
-        public List<ushort> indexList = new List<ushort>();
+        public List<int> indexList = new List<int>();
 
         Face[] mapFaces;
         Dictionary<string, List<int>> textureNameToID = new Dictionary<string,List<int>>();
@@ -63,13 +67,36 @@ namespace CopperSource
         List<Texture2D> lightmapList = new List<Texture2D>();
         int nextTexIndex = 1;
 
-        Texture2D grid, pixel, graypixel;
+        Queue<Face>[] textureFaceQueues;
+        int[] indices;
+        int[] dynamicIndices;
+        int dynamicIndex = 0;
+        DynamicIndexBuffer dib;
+        Queue<RenderGroup> textureGroupQueue;
+
+        bool[] faceQueued;
+
+        struct RenderGroup
+        {
+            public int texture;     // texture ID to use
+            public int start;       // start of texture group's indices
+            public int numVerts;    // number of vertices in group
+            public int triCount;    // number of triangles in group
+        }
+
+        Texture2D grid, pixel, graypixel, detailTex;
 
         RasterizerState wireframeRS;
+        RasterizerState scissorRS;
+
+        BlendState multiplyBS;
+
+        DepthStencilState overlayDSS;
 
         bool wireframeOn = false;
         bool freezeVisibility = false;
         bool defaultLighting = false;
+        bool overdrawView = false;
 
         Node rootNode;
         Node[] nodes;
@@ -99,6 +126,12 @@ namespace CopperSource
 
         Entity[] entities;
 
+        Stopwatch updateTimer;
+        Stopwatch drawTimer;
+
+        TimeSpan lastUpdateTime;
+        TimeSpan lastDrawTime;
+
         public Game1()
         {
             //Vector3 v = DataHelper.ValueToVector3("3.0 4.1 333");
@@ -116,8 +149,11 @@ namespace CopperSource
             IsMouseVisible = true;
             Window.AllowUserResizing = true;
 
-            IsFixedTimeStep = true;
-            graphics.SynchronizeWithVerticalRetrace = true;
+            //TargetElapsedTime = TimeSpan.FromSeconds(1d / 30d);
+
+            bool capFramerate = true;
+            IsFixedTimeStep = capFramerate;
+            graphics.SynchronizeWithVerticalRetrace = capFramerate;
         }
 
         /// <summary>
@@ -133,7 +169,31 @@ namespace CopperSource
             LoadCameraInfo();
             entities = new Entity[2048];
 
+            drawTimer = new Stopwatch();
+            updateTimer = new Stopwatch();
+
             //RenderTarget2D rt = new RenderTarget2D(GraphicsDevice, 10, 10, false, SurfaceFormat.HdrBlendable, DepthFormat.Depth24Stencil8);
+
+            scissorRS = new RasterizerState();
+            scissorRS.MultiSampleAntiAlias = true;
+            scissorRS.ScissorTestEnable = true;
+            scissorRS.FillMode = FillMode.Solid;
+            scissorRS.CullMode = CullMode.CullCounterClockwiseFace;
+            scissorRS.DepthBias = 0;
+            scissorRS.SlopeScaleDepthBias = 0;
+
+            multiplyBS = new BlendState();
+            multiplyBS.ColorBlendFunction = BlendFunction.Add;
+            multiplyBS.ColorSourceBlend = Blend.DestinationColor;
+            multiplyBS.ColorDestinationBlend = Blend.Zero;
+            multiplyBS.AlphaSourceBlend = Blend.DestinationAlpha;
+            //multiplyBS.ColorDestinationBlend = Blend.Zero;
+
+            overlayDSS = new DepthStencilState();
+            overlayDSS.DepthBufferFunction = CompareFunction.LessEqual;
+            overlayDSS.DepthBufferWriteEnable = false;
+            overlayDSS.DepthBufferEnable = true;
+
 
             base.Initialize();
         }
@@ -385,6 +445,9 @@ namespace CopperSource
 
             lineEffect = new BasicEffect(GraphicsDevice);
             worldEffect = new BasicEffect(GraphicsDevice);
+            overdrawEffect = new BasicEffect(GraphicsDevice);
+
+            overdrawEffect.DiffuseColor = Color.LightBlue.ToVector3() * 0.15f;
 
             if (true)
             {
@@ -401,7 +464,7 @@ namespace CopperSource
             worldEffect.TextureEnabled = true;
             grid = worldEffect.Texture = Content.Load<Texture2D>("Textures/tiledark_s");
 
-            BspFile mapFile = new BspFile("Content/Maps/c1a0.bsp");
+            BspFile mapFile = new BspFile(mapToLoad);
             //File.WriteAllText("entities.txt", mapFile.entityData);
 
             missingTex = new BspFile.MipTexture();
@@ -413,7 +476,7 @@ namespace CopperSource
 
             //lightmapWorldEffect.DetailTextureEnabled = true;
             lightmapWorldEffect.DetailScale = new Vector2(3, 3);
-            lightmapWorldEffect.DetailTexture = Content.Load<Texture2D>("Textures/ai_detail");
+            detailTex = lightmapWorldEffect.DetailTexture = Content.Load<Texture2D>("Textures/ai_detail");
 
             lightmapWorldEffect.FogEnabled = true;
             lightmapWorldEffect.FogStart = fogStart;
@@ -423,6 +486,7 @@ namespace CopperSource
             //textureNameToID = new Dictionary<string, int>();
             
             mapFaces = new Face[mapFile.faces.Length];
+            faceQueued = new bool[mapFaces.Length];
 
             texList.Add(grid);
             textureNameToID["missing"] = new List<int>();
@@ -437,7 +501,7 @@ namespace CopperSource
                 bool isRandomized = false;
                 int texNum = 0;
 
-                if (miptex.name[0] == '-')
+                if (miptex.name.Length > 0 && miptex.name[0] == '-')
                 {
                     realName = miptex.name.Substring(2);
                     texNum = int.Parse(miptex.name[1].ToString());
@@ -514,6 +578,15 @@ namespace CopperSource
             textures = texList.ToArray();
             texList.Clear();
 
+            textureFaceQueues = new Queue<Face>[textures.Length];
+
+            for (int i = 0; i < textureFaceQueues.Length; i++)
+            {
+                textureFaceQueues[i] = new Queue<Face>();
+            }
+
+            textureGroupQueue = new Queue<RenderGroup>();
+
             Console.WriteLine(lightmapTextures.Length + " generated lightmap textures");
             Console.WriteLine(vertList.Count + " generated vertices");
             Console.WriteLine(indexList.Count + " generated indices");
@@ -527,9 +600,13 @@ namespace CopperSource
             vb.SetData(vertList.ToArray());
             vertList = null;
 
-            ib = new IndexBuffer(GraphicsDevice, IndexElementSize.SixteenBits, indexList.Count, BufferUsage.WriteOnly);
-            ib.SetData(indexList.ToArray());
+            //ib = new IndexBuffer(GraphicsDevice, IndexElementSize.ThirtyTwoBits, indexList.Count, BufferUsage.WriteOnly);
+            indices = indexList.ToArray();
+            dynamicIndices = new int[indices.Length];
+            //ib.SetData(indexList.ToArray());
             indexList = null;
+
+            dib = new DynamicIndexBuffer(GraphicsDevice, IndexElementSize.ThirtyTwoBits, dynamicIndices.Length, BufferUsage.WriteOnly);
 
             visData = mapFile.visData;
             markSurfaces = mapFile.markSurfaces;
@@ -616,6 +693,7 @@ namespace CopperSource
 
             Face mf = new Face();
             //mf.textureName = miptex.name;
+            mf.id = i;
             mapFaces[i] = mf;
 
             if (miptex.name == "sky" || miptex.name == "clip" || miptex.name == "aaatrigger")
@@ -704,8 +782,8 @@ namespace CopperSource
             int lightmapTexIndex = -1;
             if (mapFile.lightmapData != null)
             {
-                if (face.lightmapOffset != -1)
-                    lightmapTexIndex = CreateLightmapTexture(mapFile.lightmapData, face.lightmapOffset, lightMapWidth, lightMapHeight);
+                //if (face.lightmapOffset != -1)
+                //    lightmapTexIndex = CreateLightmapTexture(mapFile.lightmapData, face.lightmapOffset, lightMapWidth, lightMapHeight);
             }
             mf.lightmapID = lightmapTexIndex;
 
@@ -731,8 +809,9 @@ namespace CopperSource
                 f_uvs[j] = new Vector2(f_uvs[j].X / texWidth, f_uvs[j].Y / texHeight);
             }
 
-            mf.start = indexList.Count;
-            mf.baseVertex = vertList.Count;
+            mf.start = mf.indicesStart = indexList.Count;
+            //mf.baseVertex = vertList.Count;
+            int baseIndex = vertList.Count;
 
             // create vertices
             for (int k = 0; k < f_points.Count; k++)
@@ -744,11 +823,13 @@ namespace CopperSource
             // convert to triangles
             for (int k = 2; k < f_points.Count; k++)
             {
-                indexList.Add(0);
-                indexList.Add((ushort)(k - 1));
-                indexList.Add((ushort)k);
+                indexList.Add(baseIndex);
+                indexList.Add(baseIndex + (k - 1));
+                indexList.Add(baseIndex + k);
                 mf.triCount++;
             }
+
+            mf.indicesLength = indexList.Count - mf.indicesStart;
 
             f_points.Clear();
             f_uvs.Clear();
@@ -768,7 +849,8 @@ namespace CopperSource
             }
 
             vb.Dispose();
-            ib.Dispose();
+            //ib.Dispose();
+            dib.Dispose();
         }
 
         KeyboardState oldKB;
@@ -780,6 +862,11 @@ namespace CopperSource
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Update(GameTime gameTime)
         {
+            //updateTimer.Reset();
+            //updateTimer.Start();
+
+            updateTimer.Restart();
+
             // Allows the game to exit
             if (GamePad.GetState(PlayerIndex.One).Buttons.Back == ButtonState.Pressed)
                 this.Exit();
@@ -858,6 +945,11 @@ namespace CopperSource
                 {
                     defaultLighting = !defaultLighting;
                 }
+
+                if (kb.IsKeyDown(Keys.D4) && oldKB.IsKeyUp(Keys.D4))
+                {
+                    overdrawView = !overdrawView;
+                }
             }
             
             base.Update(gameTime);
@@ -871,12 +963,48 @@ namespace CopperSource
                 frameRate = frameCounter;
                 frameCounter = 0;
             }
+
+            // artificial load
+            //System.Threading.Thread.Sleep(2);
+
+            //updateTimer.Stop();
+            lastUpdateTime = updateTimer.Elapsed;
         }
 
-        EffectPass defaultPass, lightmapPass;
+        EffectPass defaultPass, lightmapPass, overdrawPass;
         //EffectParameter defaultTex, lightmapTex1, lightmapTex2;
 
         int lastDrawnTexID = -1;
+
+        void ClearFaceQueueBlock()
+        {
+            //for (int i = 0; i < faceQueued.Length; i++)
+            //{
+            //    faceQueued[i] = false;
+            //}
+            Array.Clear(faceQueued, 0, faceQueued.Length);
+        }
+
+        int duplicateFaceQueues = 0;
+
+        void QueueFace(Face face)
+        {
+            if (face.type == FaceType.DontDraw)
+                return;
+
+            //if (!textureFaceQueues[face.textureID].Contains(face))
+            if (!faceQueued[face.id])
+            {
+                textureFaceQueues[face.textureID].Enqueue(face);
+                faceQueued[face.id] = true;
+            }
+            else
+            {
+                duplicateFaceQueues++;
+            }
+
+
+        }
 
         void DrawFace(Face face)
         {
@@ -911,6 +1039,7 @@ namespace CopperSource
 
         int drawnLeaves = 0;
         int drawnFaces = 0;
+        int drawnGroups = 0;
 
         void DrawLeaf(Leaf leaf)
         {
@@ -929,44 +1058,15 @@ namespace CopperSource
                 Face face = mapFaces[markSurface];
                 //if (face != null)
                 {
-                    DrawFace(face);
+                    //DrawFace(face);
+                    QueueFace(face);
                 }
             }
 
             drawnLeaves++;
+            //if (drawnLeaves > 1)
+            //    throw new Exception();
         }
-
-        // REFERENCE CODE
-        //
-        //Node searchNode = rootNode;
-        //while (true)
-        //{
-        //    // is the position in front or behind of the plane
-        //    if (Vector3.Dot(searchNode.plane.Normal, pos) > searchNode.plane.D)
-        //    {
-        //        // in front of parition plane
-        //        if (searchNode.frontLeaf != null)
-        //        {
-        //            return searchNode.frontLeaf;
-        //        }
-        //        else
-        //        {
-        //            searchNode = searchNode.frontNode;
-        //        }
-        //    }
-        //    else
-        //    {
-        //        // behind partition plane
-        //        if (searchNode.backLeaf != null)
-        //        {
-        //            return searchNode.backLeaf;
-        //        }
-        //        else
-        //        {
-        //            searchNode = searchNode.backNode;
-        //        }
-        //    }
-        //}
 
         // draws the visible leaves of a bsp tree, front to back
         public void RecursiveTreeDraw(Node node, Vector3 pos, bool[] vislist)
@@ -1087,6 +1187,10 @@ namespace CopperSource
             lightmapWorldEffect.Projection = projection;
             lightmapPass = lightmapWorldEffect.CurrentTechnique.Passes[0];
 
+            overdrawEffect.View = view;
+            overdrawEffect.Projection = projection;
+            overdrawPass = overdrawEffect.CurrentTechnique.Passes[0];
+
             if (!freezeVisibility)
             {
                 visPosition = playerPosition;
@@ -1094,26 +1198,127 @@ namespace CopperSource
                 UpdateVisiblityFromLeaf(cameraLeaf);
 
                 // do frustum check on visible leaves
-                //for (int i = 0; i < leaves.Length; i++)
-                //{
-                //    Leaf leaf = leaves[i];
-                //    if (leafVisList[i] && leaf != null)
-                //    {
-                //        ContainmentType contain = viewFrustum.Contains(leaf.bb);
-                //        leafVisList[i] = contain == ContainmentType.Contains || contain == ContainmentType.Intersects;
-                //    }
-                //    else
-                //    {
-                //        leafVisList[i] = false;
-                //    }
-                //}
+                for (int i = 0; i < leaves.Length; i++)
+                {
+                    Leaf leaf = leaves[i];
+                    if (leafVisList[i] && leaf != null)
+                    {
+                        ContainmentType contain = viewFrustum.Contains(leaf.bb);
+                        leafVisList[i] = contain == ContainmentType.Contains || contain == ContainmentType.Intersects;
+                    }
+                    else
+                    {
+                        leafVisList[i] = false;
+                    }
+                }
             }
 
             GraphicsDevice.SetVertexBuffer(vb);
             GraphicsDevice.Indices = ib;
 
+            ClearFaceQueueBlock();
+
             SetModelTransform(Matrix.Identity);
-            RecursiveTreeDraw(rootNode, TransformedVisPosition, leafVisList);
+            //try
+            //{
+                RecursiveTreeDraw(rootNode, TransformedVisPosition, leafVisList);
+            //}
+            //catch (Exception)
+            //{
+
+            //}
+
+            dynamicIndex = 0;
+            int numTextures = textures.Length;
+            for (int i = 0; i < numTextures; i++)
+            {
+                Queue<Face> faceQueue = textureFaceQueues[i];
+
+                if (faceQueue.Count == 0)
+                    continue;
+
+                RenderGroup group = new RenderGroup();
+                group.start = dynamicIndex;
+                group.texture = i;
+
+                while (faceQueue.Count > 0)
+                {
+                    Face face = faceQueue.Dequeue();
+                    for (int j = 0; j < face.indicesLength; j++)
+                    {
+                        //if (dynamicIndex < dynamicIndices.Length)
+                            dynamicIndices[dynamicIndex++] = indices[face.indicesStart + j];
+                    }
+                    group.numVerts += face.numVerts;
+                    group.triCount += face.triCount;
+                    drawnFaces++;
+                }
+
+                textureGroupQueue.Enqueue(group);
+            }
+            if (dynamicIndex > 0)
+                dib.SetData(dynamicIndices, 0, dynamicIndex);
+
+            // ======================== DRAW DRAW DRAW DRAW
+
+            if (overdrawView)
+            {
+                GraphicsDevice.BlendState = BlendState.Additive;
+                GraphicsDevice.DepthStencilState = DepthStencilState.None;
+            }
+
+            GraphicsDevice.Indices = dib;
+            while (textureGroupQueue.Count > 0)
+            {
+                RenderGroup group = textureGroupQueue.Dequeue();
+                //worldEffect.LightingEnabled = true;
+
+                // overdraw test
+                //worldEffect.LightingEnabled = false;
+                //GraphicsDevice.BlendState = BlendState.Additive;
+                //GraphicsDevice.DepthStencilState = overlayDSS;
+                //worldEffect.DiffuseColor = Color.DarkOrange.ToVector3() * 0.2f;
+                //worldEffect.TextureEnabled = false;
+                ////worldEffect.Texture = textures[group.texture];
+                //defaultPass.Apply();
+                //GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, group.start, group.numVerts, group.start, group.triCount);
+                //drawnGroups++;
+
+                //GraphicsDevice.BlendState = BlendState.Opaque;
+                //GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+
+                if (overdrawView)
+                {
+                    overdrawPass.Apply();
+                } 
+                else if (defaultLighting)
+                {
+                    worldEffect.Texture = textures[group.texture];
+                    defaultPass.Apply();
+                }
+                else
+                {
+                    lightmapWorldEffect.DiffuseTexture = textures[group.texture];
+                    lightmapWorldEffect.DetailTextureEnabled = false;
+                    lightmapWorldEffect.LightmapTexture = graypixel;
+                    lightmapPass.Apply();
+                }
+                
+                GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, group.start, group.numVerts, group.start, group.triCount);
+                drawnGroups++;
+
+                //worldEffect.LightingEnabled = false;
+                //GraphicsDevice.BlendState = multiplyBS;
+                //GraphicsDevice.DepthStencilState = overlayDSS;
+                //worldEffect.DiffuseColor = Vector3.One * 2;
+                //worldEffect.Texture = detailTex;//textures[group.texture];
+                //defaultPass.Apply();
+                //GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, group.start, group.numVerts, group.start, group.triCount);
+                //drawnGroups++;
+            }
+            
+            // ======================== DRAW DRAW DRAW DRAW
+
             //for (int i = 1; i < models.Length; i++)
             //{
             //    BspModel model = models[i];
@@ -1129,41 +1334,42 @@ namespace CopperSource
             //    }
             //}
 
-            for (int i = 0; i < entities.Length; i++)
-            {
-                if (entities[i] != null)
-                {
-                    entities[i].Draw(delta, total);
-                }
-            }
+            //for (int i = 0; i < entities.Length; i++)
+            //{
+            //    if (entities[i] != null)
+            //    {
+            //        entities[i].Draw(delta, total);
+            //    }
+            //}
 
-            spriteBatch.Begin();
-            foreach (Entity entity in entities)
-            {
-                if (entity != null)
-                {
-                    bool isVisible = entity.IsOriginVisible;
+            //spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
+            //foreach (Entity entity in entities)
+            //{
+            //    if (entity != null)
+            //    {
+            //        bool isVisible = entity.IsOriginVisible;
 
-                    if (!isVisible)
-                        continue;
+            //        if (!isVisible)
+            //            continue;
 
-                    Vector3 screenPosition = GraphicsDevice.Viewport.Project(entity.WorldOrigin, projection, view, Matrix.Identity);
-                    if (screenPosition.Z >= 0 && screenPosition.Z <= 1)
-                    {
-                        Vector2 labelPos = new Vector2((int)screenPosition.X, (int)screenPosition.Y);
+            //        Vector3 screenPosition = GraphicsDevice.Viewport.Project(entity.WorldOrigin, projection, view, Matrix.Identity);
+            //        if (screenPosition.Z >= 0 && screenPosition.Z <= 1)
+            //        {
+            //            Vector2 labelPos = new Vector2((int)screenPosition.X, (int)screenPosition.Y);
 
-                        spriteBatch.Draw(pixel, new Rectangle((int)labelPos.X - 8, (int)labelPos.Y - 8, 16, 16), Color.DarkRed);
+            //            spriteBatch.Draw(pixel, new Rectangle((int)labelPos.X - 8, (int)labelPos.Y - 8, 16, 16), Color.DarkRed);
 
-                        spriteBatch.DrawString(font, entity.classname, labelPos + Vector2.One, Color.Black);
-                        spriteBatch.DrawString(font, entity.classname, labelPos, Color.Red);
-                    }
-                }
-            }
-            spriteBatch.End();
+            //            spriteBatch.DrawString(font, entity.classname, labelPos + Vector2.One, Color.Black);
+            //            spriteBatch.DrawString(font, entity.classname, labelPos, Color.Red);
+            //        }
+            //    }
+            //}
+            //spriteBatch.End();
 
             if (viewName != null)
             {
-                spriteBatch.Begin();
+                spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
+                spriteBatch.DrawString(font, viewName, new Vector2(0, GraphicsDevice.Viewport.Height - font.LineSpacing) + Vector2.One, Color.Black);
                 spriteBatch.DrawString(font, viewName, new Vector2(0, GraphicsDevice.Viewport.Height - font.LineSpacing), Color.Red);
                 spriteBatch.End();
             }
@@ -1171,13 +1377,80 @@ namespace CopperSource
 
         StringBuilder gcsb = new StringBuilder(64);
 
+        int debugLineOffset = 0;
+        void DrawDebugLine(string s, Color color)
+        {
+            spriteBatch.DrawString(font, s, new Vector2(0, debugLineOffset) + Vector2.One, Color.Black);
+            spriteBatch.DrawString(font, s, new Vector2(0, debugLineOffset), color);
+            debugLineOffset += font.LineSpacing;
+        }
+        void DrawDebugLine(StringBuilder s, Color color)
+        {
+            spriteBatch.DrawString(font, s, new Vector2(0, debugLineOffset) + Vector2.One, Color.Black);
+            spriteBatch.DrawString(font, s, new Vector2(0, debugLineOffset), color);
+            debugLineOffset += font.LineSpacing;
+        }
+
+        int timerOffset = 0;
+        bool timerOffsetOdd = false;
+        void DrawUpdateTimer(string label, TimeSpan timeSpan, TimeSpan target, Color coolColor, Color hotColor)
+        {
+            //spriteBatch.Begin();
+
+            Rectangle frameTimeRect = new Rectangle(GraphicsDevice.Viewport.Width - 200, timerOffset, 200, font.LineSpacing);
+
+            Color bgColor = new Color(32, 32, 32);
+            if (timerOffsetOdd)
+                bgColor = new Color(40, 40, 40);
+            
+
+            double frameTimeMultiplier = timeSpan.TotalSeconds / target.TotalSeconds;
+
+            Color frameTimeColor = coolColor;
+            if (frameTimeMultiplier > 1d)
+            {
+                frameTimeColor = hotColor;
+                frameTimeMultiplier = 1d;
+            }
+
+            spriteBatch.Draw(pixel, frameTimeRect, bgColor);
+            //spriteBatch.DrawString(font, label, new Vector2(frameTimeRect.X, frameTimeRect.Y), frameTimeColor);
+            frameTimeRect.Width = (int)(frameTimeRect.Width * frameTimeMultiplier);
+            spriteBatch.Draw(pixel, frameTimeRect, frameTimeColor);
+            //Rectangle oldScissor = GraphicsDevice.ScissorRectangle;
+
+            //spriteBatch.End();
+
+            //GraphicsDevice.RasterizerState = scissorRS;
+            //spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.None, scissorRS);
+            //GraphicsDevice.ScissorRectangle = frameTimeRect;
+            spriteBatch.DrawString(font, label, new Vector2(frameTimeRect.X, frameTimeRect.Y), Color.White);
+            //GraphicsDevice.ScissorRectangle = oldScissor;
+            //spriteBatch.End();
+            //GraphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
+
+            timerOffset += font.LineSpacing;
+            timerOffsetOdd = !timerOffsetOdd;
+        }
+
         /// <summary>
         /// This is called when the game should draw itself.
         /// </summary>
         /// <param name="gameTime">Provides a snapshot of timing values.</param>
         protected override void Draw(GameTime gameTime)
         {
-            GraphicsDevice.Clear(skyColor);
+            //drawTimer.Reset();
+            //drawTimer.Start();
+            drawTimer.Restart();
+
+            if (overdrawView)
+            {
+                GraphicsDevice.Clear(Color.Black);
+            }
+            else
+            {
+                GraphicsDevice.Clear(skyColor);
+            }
 
             //Viewport defaultViewport = GraphicsDevice.Viewport;
             //Viewport splitTL = new Viewport(defaultViewport.X, defaultViewport.Y, defaultViewport.Width / 2, defaultViewport.Height / 2);
@@ -1188,8 +1461,13 @@ namespace CopperSource
             lastDrawnTexID = -1;
             drawnFaces = 0;
             drawnLeaves = 0;
+            drawnGroups = 0;
+            debugLineOffset = 0;
+            timerOffset = 0;
+            timerOffsetOdd = false;
+            duplicateFaceQueues = 0;
 
-            DrawScene(gameTime, 0);
+            DrawScene(gameTime, 0, mapToLoad);
 
             //GraphicsDevice.Viewport = splitTL;
             //DrawScene(gameTime, 0, "FRONT");
@@ -1204,44 +1482,53 @@ namespace CopperSource
 
             spriteBatch.Begin(SpriteSortMode.Deferred, 
                 BlendState.AlphaBlend, 
-                SamplerState.PointWrap, 
+                SamplerState.PointClamp, 
                 DepthStencilState.None, 
                 RasterizerState.CullCounterClockwise);
 
             KConsole.SetResolution(GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
             KConsole.Draw(spriteBatch, font, (float)gameTime.ElapsedGameTime.TotalSeconds, (float)gameTime.TotalGameTime.TotalSeconds);
 
-            spriteBatch.DrawString(font, "Camera position: " + playerPosition.ToString(), Vector2.Zero + Vector2.One, Color.Black);
-            spriteBatch.DrawString(font, "Camera position: " + playerPosition.ToString(), Vector2.Zero, Color.White);
+            DrawDebugLine("Camera position: " + playerPosition.ToString(), Color.White);
 
             string visString = "Leaf/PVS: " + cameraLeaf.id.ToString() + "/" + cameraLeaf.visCluster + " " + leafVisList[cameraLeaf.id].ToString();
             if (freezeVisibility)
                 visString += " (VIS FROZEN)";
-            spriteBatch.DrawString(font, visString, new Vector2(0, font.LineSpacing) + Vector2.One, Color.Black);
-            spriteBatch.DrawString(font, visString, new Vector2(0, font.LineSpacing), Color.White);
+            DrawDebugLine(visString, Color.White);
 
-            string drawCountString = "Drawn Leaves/Faces: " + drawnLeaves + "/" + drawnFaces;
-            spriteBatch.DrawString(font, drawCountString, new Vector2(0, font.LineSpacing * 2) + Vector2.One, Color.Black);
-            spriteBatch.DrawString(font, drawCountString, new Vector2(0, font.LineSpacing * 2), Color.White);
+            string drawCountString = "Drawn Leaves/Faces/Groups: " + drawnLeaves + "/" + drawnFaces + "/" + drawnGroups;
+            DrawDebugLine(drawCountString, Color.White);
+
+            DrawDebugLine("Duplicate Face Queues: " + duplicateFaceQueues, Color.White);
 
             frameCounter++;
 
             string fps = string.Format("fps: {0}", frameRate);
-
-            spriteBatch.DrawString(font, fps, new Vector2(0, font.LineSpacing * 3) + Vector2.One, Color.Black);
-            spriteBatch.DrawString(font, fps, new Vector2(0, font.LineSpacing * 3), Color.White);
+            DrawDebugLine(fps, Color.White);
 
             //string gc = "GC: " + GC.GetTotalMemory(false) + " bytes";
             gcsb.Clear();
             gcsb.Append("GC: ");
             gcsb.Append(GC.GetTotalMemory(false));
             gcsb.Append(" bytes");
-            spriteBatch.DrawString(font, gcsb, new Vector2(0, font.LineSpacing * 4) + Vector2.One, Color.Black);
-            spriteBatch.DrawString(font, gcsb, new Vector2(0, font.LineSpacing * 4), Color.White);
+            DrawDebugLine(gcsb, Color.White);
+
+            DrawDebugLine("Last Tick Time: " + lastUpdateTime.TotalMilliseconds.ToString("0.00") + " ms", Color.White);
+            DrawDebugLine("Last Frame Time: " + lastDrawTime.TotalMilliseconds.ToString("0.00") + " ms", Color.White);
+            TimeSpan totalTime = (lastUpdateTime + lastDrawTime);
+            DrawDebugLine("Total Time: " + totalTime.TotalMilliseconds.ToString("0.00") + " ms", Color.White);
+            DrawDebugLine("Max Time: " + TargetElapsedTime.TotalMilliseconds.ToString("0.00") + " ms", Color.White);
+
+            DrawUpdateTimer("update", lastUpdateTime, TargetElapsedTime, Color.DarkOrange, Color.Red);
+            DrawUpdateTimer("draw", lastDrawTime, TargetElapsedTime, Color.Indigo, Color.Red);
+            DrawUpdateTimer("total", totalTime, TargetElapsedTime, Color.Blue, Color.Red);
 
             spriteBatch.End();
 
             base.Draw(gameTime);
+
+            //drawTimer.Stop();
+            lastDrawTime = drawTimer.Elapsed;
         }
     }
 }

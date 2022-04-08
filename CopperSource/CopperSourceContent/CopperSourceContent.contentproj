@@ -102,6 +102,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Name>c1a1</Name>
     </None>
+    <None Include="Maps\central_bunker.bsp">
+      <Name>central_bunker</Name>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Maps\copper.bsp">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Name>copper</Name>

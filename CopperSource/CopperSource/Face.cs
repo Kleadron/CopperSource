@@ -15,10 +15,12 @@ namespace CopperSource
 
     public class Face
     {
+        public int id;
         public int textureID;
         public int lightmapID;
         public Plane plane;
         public FaceType type;
         public int start, baseVertex, numVerts, triCount;
+        public int indicesStart, indicesLength;
     }
 }
