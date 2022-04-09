@@ -247,6 +247,7 @@ namespace CopperSource
 
             reader.BaseStream.Position = offset;
 
+            // this might be wrong! it returns 16 in most cases but should represent the texture width?
             font.width = reader.ReadInt32();
             font.height = reader.ReadInt32();
             font.rowCount = reader.ReadInt32();
@@ -262,6 +263,7 @@ namespace CopperSource
 
             font.data = ReadTextureData(reader, 256, font.height);
 
+            // this is wrong!
             font.colorCount = reader.ReadInt16();
 
             // hope that's right

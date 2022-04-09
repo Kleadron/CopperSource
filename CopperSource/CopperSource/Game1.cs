@@ -44,7 +44,7 @@ namespace CopperSource
         float cameraYawAngle = 0f;
         float cameraPitchAngle = 0f;
 
-        string mapToLoad = "Content/Maps/arctic_incident_2.bsp";
+        string mapToLoad = "Content/Maps/c1a0.bsp";
 
         //BspFile mapFile;
         //SpriteFont font;
@@ -476,6 +476,7 @@ namespace CopperSource
         {
             Texture2D tex = new Texture2D(GraphicsDevice, miptex.width, miptex.height, miptex.mip1data != null && enableMipMaps, SurfaceFormat.Color);
 
+            //miptex.colorPalette[255] = Color.Transparent;
             Color[] colors = new Color[miptex.width * miptex.height];
             for (int i = 0; i < colors.Length; i++)
             {
@@ -1560,29 +1561,29 @@ namespace CopperSource
 
             // ======================== DRAW DRAW DRAW DRAW
 
-            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
-            foreach (Entity entity in entities)
-            {
-                if (entity != null)
-                {
-                    bool isVisible = entity.IsOriginVisible;
+            //spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
+            //foreach (Entity entity in entities)
+            //{
+            //    if (entity != null)
+            //    {
+            //        bool isVisible = entity.IsOriginVisible;
 
-                    if (!isVisible)
-                        continue;
+            //        if (!isVisible)
+            //            continue;
 
-                    Vector3 screenPosition = GraphicsDevice.Viewport.Project(entity.WorldOrigin, projection, view, Matrix.Identity);
-                    if (screenPosition.Z >= 0 && screenPosition.Z <= 1)
-                    {
-                        Vector2 labelPos = new Vector2((int)screenPosition.X, (int)screenPosition.Y);
+            //        Vector3 screenPosition = GraphicsDevice.Viewport.Project(entity.WorldOrigin, projection, view, Matrix.Identity);
+            //        if (screenPosition.Z >= 0 && screenPosition.Z <= 1)
+            //        {
+            //            Vector2 labelPos = new Vector2((int)screenPosition.X, (int)screenPosition.Y);
 
-                        spriteBatch.Draw(pixel, new Rectangle((int)labelPos.X - 8, (int)labelPos.Y - 8, 16, 16), Color.DarkRed);
+            //            spriteBatch.Draw(pixel, new Rectangle((int)labelPos.X - 8, (int)labelPos.Y - 8, 16, 16), Color.DarkRed);
 
-                        //spriteBatch.DrawString(hlFont, entity.classname, labelPos + Vector2.One, Color.Black);
-                        spriteBatch.DrawString(hlFont, entity.classname, labelPos, Color.Red);
-                    }
-                }
-            }
-            spriteBatch.End();
+            //            //spriteBatch.DrawString(hlFont, entity.classname, labelPos + Vector2.One, Color.Black);
+            //            spriteBatch.DrawString(hlFont, entity.classname, labelPos, Color.Red);
+            //        }
+            //    }
+            //}
+            //spriteBatch.End();
 
             if (viewName != null)
             {
