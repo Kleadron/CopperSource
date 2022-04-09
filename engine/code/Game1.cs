@@ -46,7 +46,7 @@ namespace CopperSource
         float cameraYawAngle = 0f;
         float cameraPitchAngle = 0f;
 
-        string mapToLoad = KSOFT_DATA_DIRECTORY + "/maps/c1a0.bsp";
+        string mapToLoad = KSOFT_DATA_DIRECTORY + "/maps/de_dust2.bsp";
 
         //BspFile mapFile;
         //SpriteFont font;
@@ -178,7 +178,7 @@ namespace CopperSource
 
             //TargetElapsedTime = TimeSpan.FromSeconds(1d / 30d);
 
-            bool capFramerate = false;
+            bool capFramerate = true;
             IsFixedTimeStep = capFramerate;
             graphics.SynchronizeWithVerticalRetrace = capFramerate;
         }
@@ -575,9 +575,9 @@ namespace CopperSource
             worldEffect.TextureEnabled = true;
             grid = worldEffect.Texture = LoadImage("tiledark_s");
 
-            WadFile fontWad = new WadFile(KSOFT_DATA_DIRECTORY + "/fonts.wad"); // gfx.wad
+            WadFile fontWad = new WadFile(KSOFT_DATA_DIRECTORY + "/gfx.wad"); // gfx.wad
             WadFile.Font fontData;
-            fontWad.TryReadFont("FONT2", out fontData); // CONCHARS
+            fontWad.TryReadFont("CONCHARS", out fontData); // CONCHARS
             hlFont = new HLFont(GraphicsDevice, fontData);
             fontWad.Close();
 
@@ -1762,6 +1762,12 @@ namespace CopperSource
             DrawUpdateTimer("update", lastUpdateTime, TargetElapsedTime, Color.DarkOrange, Color.Red);
             DrawUpdateTimer("draw", lastDrawTime, TargetElapsedTime, Color.Indigo, Color.Red);
             DrawUpdateTimer("total", totalTime, TargetElapsedTime, Color.Blue, Color.Red);
+
+            //string newLineTestString = "This is a\nNewline test!\nOh my god so many\nL\ni\nn\ne\ns\n.";
+
+            //Vector2 newLineTestSize = hlFont.MeasureString(newLineTestString);
+            //spriteBatch.Draw(pixel, new Rectangle(200, 200, (int)newLineTestSize.X, (int)newLineTestSize.Y), Color.Gray);
+            //spriteBatch.DrawString(hlFont, newLineTestString, new Vector2(200, 200), Color.White);
 
             spriteBatch.End();
 

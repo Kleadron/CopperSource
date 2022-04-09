@@ -60,19 +60,62 @@ namespace CopperSource
             texture.SetData(0, null, colors, 0, colors.Length);
         }
 
+        /// <summary>
+        /// Measures a string with the font information and returns the bounding size.
+        /// </summary>
+        /// <param name="s">The input string to measure.</param>
+        /// <returns>The bounding size of the string.</returns>
         public Vector2 MeasureString(string s)
         {
             int width = 0;
+            int height = rowHeight;
+
+            int rowWidth = 0;
 
             for (int i = 0; i < s.Length; i++)
             {
-                Rectangle srcRect = characterRects[s[i] % 256];
-                width += srcRect.Width;
+                char c = s[i];
+                if (c == '\n')
+                {
+                    rowWidth = 0;
+                    height += rowHeight;
+                }
+                Rectangle srcRect = characterRects[c % 256];
+                rowWidth += srcRect.Width;
+                if (rowWidth > width)
+                    width = rowWidth;
             }
 
+            return new Vector2(width, height);
+        }
+
+        /// <summary>
+        /// A variant of MeasureString that uses Point instead of Vector2.
+        /// </summary>
+        /// <param name="s">The input string to measure.</param>
+        /// <returns>The bounding size of the string.</returns>
+        public Point MeasureStringPoint(string s)
+        {
+            int width = 0;
             int height = rowHeight;
 
-            return new Vector2(width, height);
+            int rowWidth = 0;
+
+            for (int i = 0; i < s.Length; i++)
+            {
+                char c = s[i];
+                if (c == '\n')
+                {
+                    rowWidth = 0;
+                    height += rowHeight;
+                }
+                Rectangle srcRect = characterRects[c % 256];
+                rowWidth += srcRect.Width;
+                if (rowWidth > width)
+                    width = rowWidth;
+            }
+
+            return new Point(width, height);
         }
     }
 
@@ -81,10 +124,17 @@ namespace CopperSource
         public static void DrawString(this SpriteBatch spriteBatch, HLFont hlFont, string text, Vector2 position, Color color)
         {
             int xOff = 0;
+            int yOff = 0;
             for (int i = 0; i < text.Length; i++)
             {
-                Rectangle srcRect = hlFont.characterRects[text[i] % 256];
-                spriteBatch.Draw(hlFont.texture, new Vector2(position.X + xOff, position.Y), srcRect, color);
+                char c = text[i];
+                if (c == '\n')
+                {
+                    xOff = 0;
+                    yOff += hlFont.rowHeight;
+                }
+                Rectangle srcRect = hlFont.characterRects[c % 256];
+                spriteBatch.Draw(hlFont.texture, new Vector2(position.X + xOff, position.Y + yOff), srcRect, color);
                 xOff += srcRect.Width;
             }
         }
@@ -92,10 +142,17 @@ namespace CopperSource
         public static void DrawString(this SpriteBatch spriteBatch, HLFont hlFont, StringBuilder text, Vector2 position, Color color)
         {
             int xOff = 0;
+            int yOff = 0;
             for (int i = 0; i < text.Length; i++)
             {
-                Rectangle srcRect = hlFont.characterRects[text[i] % 256];
-                spriteBatch.Draw(hlFont.texture, new Vector2(position.X + xOff, position.Y), srcRect, color);
+                char c = text[i];
+                if (c == '\n')
+                {
+                    xOff = 0;
+                    yOff += hlFont.rowHeight;
+                }
+                Rectangle srcRect = hlFont.characterRects[c % 256];
+                spriteBatch.Draw(hlFont.texture, new Vector2(position.X + xOff, position.Y + yOff), srcRect, color);
                 xOff += srcRect.Width;
             }
         }
