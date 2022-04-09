@@ -54,12 +54,7 @@ namespace CopperSource
 
         const int MAXTEXTURENAME = 16;
         const int MIPLEVELS = 4;
-        public struct MipTexture
-        {
-            public string name;
-            public uint width, height;
-            public uint[] mipOffsets;
-        }
+        // MipTexture moved to it's own file file
 
         public struct Edge
         {
@@ -463,28 +458,95 @@ namespace CopperSource
             textures = new MipTexture[totalTextures];
             for (int i = 0; i < totalTextures; i++)
             {
-                reader.BaseStream.Position = header.lumps[LUMP_TEXTURES].offset + mipTextureOffsets[i];
-                textures[i].name = "";
+                uint baseMiptexPosition = header.lumps[LUMP_TEXTURES].offset + (uint)mipTextureOffsets[i];
+                reader.BaseStream.Position = baseMiptexPosition;
+                //textures[i].name = "";
 
-                while (true)
+                byte[] name = reader.ReadBytes(MAXTEXTURENAME);
+                string namestring = ASCIIEncoding.ASCII.GetString(name);
+
+                namestring = namestring.Substring(0, namestring.IndexOf((char)0));
+
+                textures[i].name = namestring;
+
+                Console.WriteLine(namestring);
+
+                textures[i].width = reader.ReadInt32();
+                textures[i].height = reader.ReadInt32();
+
+                uint mip0 = reader.ReadUInt32();
+                uint mip1 = reader.ReadUInt32();
+                uint mip2 = reader.ReadUInt32();
+                uint mip3 = reader.ReadUInt32();
+
+                if (textures[i].width > 4096 || textures[i].height > 4096)
                 {
-                    byte nextChar = reader.ReadByte();
-                    if (nextChar == 0)
-                        break;
-                    textures[i].name += (char)nextChar;
+                    Console.WriteLine("Texture size too big! " + namestring + " " + textures[i].width + "x" + textures[i].height);
+                    continue;
                 }
 
-                //Console.WriteLine(textures[i].name);
+                if (mip0 != 0)
+                {
+                    reader.BaseStream.Position = baseMiptexPosition + mip0;
+                    textures[i].mip0data = ReadTextureData(reader, textures[i].width, textures[i].height);
+                }
+                if (mip1 != 0)
+                {
+                    reader.BaseStream.Position = baseMiptexPosition + mip1;
+                    textures[i].mip1data = ReadTextureData(reader, textures[i].width / 2, textures[i].height / 2);
+                }
+                if (mip2 != 0)
+                {
+                    reader.BaseStream.Position = baseMiptexPosition + mip2;
+                    textures[i].mip2data = ReadTextureData(reader, textures[i].width / 4, textures[i].height / 4);
+                }
+                if (mip3 != 0)
+                {
+                    reader.BaseStream.Position = baseMiptexPosition + mip3;
+                    textures[i].mip3data = ReadTextureData(reader, textures[i].width / 8, textures[i].height / 8);
+                }
 
-                textures[i].width = reader.ReadUInt32();
-                textures[i].height = reader.ReadUInt32();
-
-                textures[i].mipOffsets = new uint[4];
-                textures[i].mipOffsets[0] = reader.ReadUInt32();
-                textures[i].mipOffsets[1] = reader.ReadUInt32();
-                textures[i].mipOffsets[2] = reader.ReadUInt32();
-                textures[i].mipOffsets[3] = reader.ReadUInt32();
+                if (mip0 != 0 || mip1 != 0 || mip2 != 0 || mip3 != 0)
+                {
+                    //reader.BaseStream.Position = header.lumps[LUMP_TEXTURES].offset + mip3 + ((textures[i].width / 8) * (textures[i].height / 8));
+                    reader.BaseStream.Position += 2;
+                    textures[i].colorPalette = ReadColorPalette(reader);
+                }
             }
+        }
+
+        // set stream position before reading!
+        byte[] ReadTextureData(BinaryReader reader, int width, int height)
+        {
+            //byte[] colors = new byte[width * height];
+
+            byte[] colors = reader.ReadBytes(width * height);
+            //for (int j = 0; j < colors.Length; j++)
+            //{
+            //    colors[j] = reader.ReadByte();
+            //}
+
+            return colors;
+        }
+
+        Color[] ReadColorPalette(BinaryReader reader)
+        {
+            Color[] palette = new Color[256];
+
+            for (int i = 0; i < palette.Length; i++)
+            {
+                byte r = reader.ReadByte();
+                byte g = reader.ReadByte();
+                byte b = reader.ReadByte();
+
+                palette[i] = new Color(r, g, b);
+            }
+
+            // last index is always transparent?
+            //if (palette[255].R == 0 && palette[255].G == 0 && palette[255].B == 255)
+            //    palette[255] = Color.Transparent;
+
+            return palette;
         }
 
         void ReadFaces(BinaryReader reader)

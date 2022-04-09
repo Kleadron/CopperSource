@@ -110,6 +110,11 @@ namespace CopperSource.Objects
             return null;
         }
 
+        public virtual void Initialize()
+        {
+
+        }
+
         public virtual void Update(float delta, float total)
         {
 

@@ -86,6 +86,10 @@
       <Name>arctic_incident_2</Name>
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Include="Maps\ascii_art.bsp">
+      <Name>ascii_art</Name>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
     <None Include="Maps\Big_City_alpha.bsp">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Name>Big_City_alpha</Name>

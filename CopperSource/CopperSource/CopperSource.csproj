@@ -111,6 +111,7 @@
     <Compile Include="DataHelper.cs" />
     <Compile Include="EffectHelpers.cs" />
     <Compile Include="IEntityReader.cs" />
+    <Compile Include="MipTexture.cs" />
     <Compile Include="Objects\BrushEntity.cs" />
     <Compile Include="Objects\BrushEntityDoor.cs" />
     <Compile Include="Objects\Entity.cs" />
@@ -121,12 +122,15 @@
     <Compile Include="LightmapEffect.cs" />
     <Compile Include="Face.cs" />
     <Compile Include="Node.cs" />
+    <Compile Include="Objects\EntityClassnameAttribute.cs" />
+    <Compile Include="Objects\EntityWorldspawn.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Game1.cs" />
     <Compile Include="system\Input.cs" />
     <Compile Include="system\KConsole.cs" />
     <Compile Include="VertexPositionNormalDualTexture.cs" />
+    <Compile Include="WadFile.cs" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Game.ico" />

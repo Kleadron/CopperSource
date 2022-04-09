@@ -44,7 +44,7 @@ namespace CopperSource
         float cameraYawAngle = 0f;
         float cameraPitchAngle = 0f;
 
-        string mapToLoad = "Content/Maps/de_dust2.bsp";
+        string mapToLoad = "Content/Maps/c1a0.bsp";
 
         //BspFile mapFile;
         SpriteFont font;
@@ -171,9 +171,22 @@ namespace CopperSource
 
             //TargetElapsedTime = TimeSpan.FromSeconds(1d / 30d);
 
-            bool capFramerate = false;
+            bool capFramerate = true;
             IsFixedTimeStep = capFramerate;
             graphics.SynchronizeWithVerticalRetrace = capFramerate;
+        }
+
+        T GetEntityByType<T>() where T : Entity
+        {
+            foreach (Entity entity in entities)
+            {
+                if (entity != null && entity is T)
+                {
+                    return (T)entity;
+                }
+            }
+
+            return null;
         }
 
         /// <summary>
@@ -442,7 +455,24 @@ namespace CopperSource
             }
         }
 
-        BspFile.MipTexture missingTex;
+        MipTexture missingTex;
+
+        Texture2D LoadMipTex(MipTexture miptex)
+        {
+            Texture2D tex = new Texture2D(GraphicsDevice, miptex.width, miptex.height, false, SurfaceFormat.Color);
+            Color[] colors = new Color[miptex.width * miptex.height];
+
+            for (int i = 0; i < colors.Length; i++)
+            {
+                colors[i] = miptex.colorPalette[miptex.mip0data[i]];
+            }
+
+            tex.SetData(colors);
+
+            //tex.Name = miptex.name;
+
+            return tex;
+        }
 
         /// <summary>
         /// LoadContent will be called once per game and is the place to load
@@ -488,10 +518,83 @@ namespace CopperSource
             BspFile mapFile = new BspFile(mapToLoad);
             //File.WriteAllText("entities.txt", mapFile.entityData);
 
-            missingTex = new BspFile.MipTexture();
+            int entityLoadIndex = 0;
+            bool readingEntity = false;
+
+            Dictionary<string, string> keyValues = new Dictionary<string, string>();
+
+            for (int i = 0; i < mapFile.entityData.Length; i++)
+            {
+                string line = mapFile.entityData[i];
+                if (line[0] == '{')
+                {
+                    readingEntity = true;
+                    keyValues.Clear();
+                    continue;
+                }
+
+                if (line[0] == '}')
+                {
+                    readingEntity = false;
+                    // make entity
+                    Entity ent = null;
+
+                    if (keyValues["classname"].StartsWith("trigger_"))
+                    {
+                        continue;
+                    }
+
+                    if (keyValues["classname"] == "func_ladder")
+                    {
+                        continue;
+                    }
+
+                    if (keyValues.ContainsKey("model") && keyValues["model"].StartsWith("*"))
+                    {
+                        ent = new BrushEntity(this);
+                    }
+                    else if (keyValues["classname"] == "worldspawn")
+                    {
+                        ent = new EntityWorldspawn(this);
+                    }
+                    else
+                    {
+                        ent = new Entity(this);
+                    }
+
+                    foreach (KeyValuePair<string, string> pair in keyValues)
+                    {
+                        ent.SetKeyValue(pair.Key, pair.Value);
+                    }
+                    entities[entityLoadIndex++] = ent;
+                    continue;
+                }
+
+                if (readingEntity)
+                {
+                    int keyStart = line.IndexOf('"', 0);
+                    int keyEnd = line.IndexOf('"', keyStart + 1);
+
+                    string key = line.Substring(keyStart + 1, keyEnd - keyStart - 1);
+
+                    int valueStart = line.IndexOf('"', keyEnd + 1);
+                    int valueEnd = line.IndexOf('"', valueStart + 1);
+
+                    string value = line.Substring(valueStart + 1, valueEnd - valueStart - 1);
+
+                    //Console.WriteLine("Key: " + key);
+                    //Console.WriteLine("Value: " + value);
+                    keyValues[key] = value;
+                    continue;
+                }
+            }
+
+            Console.WriteLine(entityLoadIndex + " entities");
+
+            missingTex = new MipTexture();
             missingTex.name = "missing";
-            missingTex.width = (uint)grid.Width;
-            missingTex.height = (uint)grid.Height;
+            missingTex.width = grid.Width;
+            missingTex.height = grid.Height;
 
             lightmapWorldEffect = new LightmapEffect(Content.Load<Effect>("Effects/LightmapEffect"));
 
@@ -513,10 +616,27 @@ namespace CopperSource
             textureNameToID["missing"] = new List<int>();
             textureNameToID["missing"].Add(0);
 
+            EntityWorldspawn worldspawn = GetEntityByType<EntityWorldspawn>();
+            WadFile[] wads = new WadFile[worldspawn.wads.Length];
+
+            for (int i = 0; i < wads.Length; i++)
+            {
+                string wadPath = "Content/Wads/" + Path.GetFileName(worldspawn.wads[i]);
+
+                if (File.Exists(wadPath))
+                {
+                    wads[i] = new WadFile(wadPath);
+                }
+                else
+                {
+                    Console.WriteLine("Wad file does not exist! " + wadPath);
+                }
+            }
+
             if (mapFile.textures != null)
             for (int i = 0; i < mapFile.textures.Length; i++)
             {
-                BspFile.MipTexture miptex = mapFile.textures[i];
+                MipTexture miptex = mapFile.textures[i];
                 string fileName = miptex.name;
                 string realName = miptex.name;
                 bool isRandomized = false;
@@ -530,9 +650,34 @@ namespace CopperSource
                 }
 
                 //Console.WriteLine(miptex.name);
-                if (File.Exists(Content.RootDirectory + "/Textures/Maptextures/" + fileName + ".xnb"))
+                bool embeddedTexture = miptex.mip0data != null;
+                bool hasTextureFile = false;//File.Exists(Content.RootDirectory + "/Textures/Maptextures/" + fileName + ".xnb");
+
+                int wadIndex = 0;
+                bool existsInWad = false;
+
+                for (int j = 0; j < wads.Length; j++)
                 {
-                    Texture2D tex = Content.Load<Texture2D>("Textures/Maptextures/" + fileName);
+                    if (wads[j] != null && wads[j].HasFile(fileName))
+                    {
+                        existsInWad = true;
+                        wadIndex = j;
+                    }
+                }
+
+                if (embeddedTexture || hasTextureFile || existsInWad)
+                {
+                    Texture2D tex = null;
+                    if (embeddedTexture)
+                        tex = LoadMipTex(miptex);
+                    else if (existsInWad)
+                    {
+                        MipTexture wadMipTex;
+                        wads[wadIndex].TryReadTexture(fileName, out wadMipTex);
+                        tex = LoadMipTex(wadMipTex);
+                    }
+                    else
+                        tex = Content.Load<Texture2D>("Textures/Maptextures/" + fileName);
 
                     if (isRandomized)
                     {
@@ -557,6 +702,12 @@ namespace CopperSource
                     textureNameToID[realName] = new List<int>();
                     textureNameToID[realName].Add(0);
                 }
+            }
+
+            for (int j = 0; j < wads.Length; j++)
+            {
+                if (wads[j] != null)
+                    wads[j].Close();
             }
 
             nodes = new Node[mapFile.nodes.Length];
@@ -632,63 +783,11 @@ namespace CopperSource
             visData = mapFile.visData;
             markSurfaces = mapFile.markSurfaces;
 
-            int entityLoadIndex = 0;
-            bool readingEntity = false;
-
-            Dictionary<string, string> keyValues = new Dictionary<string, string>();
-
-            for (int i = 0; i < mapFile.entityData.Length; i++)
+            foreach (Entity entity in entities)
             {
-                string line = mapFile.entityData[i];
-                if (line[0] == '{')
-                {
-                    readingEntity = true;
-                    keyValues.Clear();
-                    continue;
-                }
-
-                if (line[0] == '}')
-                {
-                    readingEntity = false;
-                    // make entity
-                    Entity ent = null;
-                    if (keyValues.ContainsKey("model") && keyValues["model"].StartsWith("*"))
-                    {
-                        ent = new BrushEntity(this);
-                    }
-                    else
-                    {
-                        ent = new Entity(this);
-                    }
-                    
-                    foreach(KeyValuePair<string, string> pair in keyValues)
-                    {
-                        ent.SetKeyValue(pair.Key, pair.Value);
-                    }
-                    entities[entityLoadIndex++] = ent;
-                    continue;
-                }
-
-                if (readingEntity)
-                {
-                    int keyStart = line.IndexOf('"', 0);
-                    int keyEnd = line.IndexOf('"', keyStart + 1);
-
-                    string key = line.Substring(keyStart + 1, keyEnd - keyStart - 1);
-
-                    int valueStart = line.IndexOf('"', keyEnd + 1);
-                    int valueEnd = line.IndexOf('"', valueStart + 1);
-
-                    string value = line.Substring(valueStart + 1, valueEnd - valueStart - 1);
-
-                    //Console.WriteLine("Key: " + key);
-                    //Console.WriteLine("Value: " + value);
-                    keyValues[key] = value;
-                    continue;
-                }
+                if (entity != null)
+                    entity.Initialize();
             }
-
-            Console.WriteLine(entityLoadIndex + " entities");
 
             GC.Collect();
         }
@@ -702,7 +801,7 @@ namespace CopperSource
             BspFile.Face face = mapFile.faces[i];
 
             BspFile.TextureInfo texinfo = mapFile.textureInfos[face.textureInfo];
-            BspFile.MipTexture miptex;
+            MipTexture miptex;
             if (mapFile.textures == null)
             {
                 miptex = missingTex;
@@ -1330,18 +1429,13 @@ namespace CopperSource
                 GraphicsDevice.RasterizerState = wireframeRS;
 
             // diffuse texture and detail texture
-            GraphicsDevice.SamplerStates[0] = SamplerState.AnisotropicWrap;
-            GraphicsDevice.SamplerStates[2] = SamplerState.AnisotropicWrap;
+            GraphicsDevice.SamplerStates[0] = SamplerState.PointWrap; // AnisotropicWrap
+            GraphicsDevice.SamplerStates[2] = SamplerState.PointWrap;
             // lightmap texture
             //GraphicsDevice.SamplerStates[1] = SamplerState.PointWrap;
             GraphicsDevice.SamplerStates[1] = SamplerState.LinearClamp;
 
             GraphicsDevice.BlendState = BlendState.Opaque;
-            //GraphicsDevice.
-            // TODO: Add your drawing code here
-
-            //GraphicsDevice.gr
-
 
             Matrix cameraRotation = Matrix.CreateRotationY(MathHelper.ToRadians(cameraPitchAngle)) * Matrix.CreateRotationZ(MathHelper.ToRadians(cameraYawAngle + addRotation));
 
@@ -1372,7 +1466,7 @@ namespace CopperSource
                 cameraLeaf = GetLeafFromPosition(visPosition);
                 UpdateVisiblityFromLeaf(cameraLeaf);
 
-                // do frustum check on visible leaves
+                // do frustum check on visible leaves -- THIS SLOWS DOWN THE RENDERING MORE THAN IT HELPS :(
                 //for (int i = 0; i < leaves.Length; i++)
                 //{
                 //    Leaf leaf = leaves[i];
@@ -1388,32 +1482,9 @@ namespace CopperSource
                 //}
             }
 
-            //DrawBspModel(models[0], Matrix.Identity, leafVisList);
-            
-
-            //for (int i = 1; i < models.Length; i++)
-            //{
-            //    BspModel model = models[i];
-            //    Leaf leaf = GetLeafFromPosition(model.center);
-            //    bool isVisible = leafVisList[leaf.id] || leaf.id == 0;
-            //    if (isVisible)
-            //    {
-            //        //ContainmentType viewContain = viewFrustum.Contains(model.bb);
-            //        //if (viewContain == ContainmentType.Contains || viewContain == ContainmentType.Intersects)
-            //        {
-            //            RecursiveTreeDraw(models[i].rootNode, model.center);
-            //        }
-            //    }
-            //}
-
-            
-
             // ======================== DRAW DRAW DRAW DRAW
 
-            
             QueueStaticBspModel(models[0], leafVisList);
-            
-            // ======================== DRAW DRAW DRAW DRAW
 
             for (int i = 0; i < entities.Length; i++)
             {
@@ -1424,6 +1495,8 @@ namespace CopperSource
             }
 
             DrawBspQueue();
+
+            // ======================== DRAW DRAW DRAW DRAW
 
             //spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
             //foreach (Entity entity in entities)
