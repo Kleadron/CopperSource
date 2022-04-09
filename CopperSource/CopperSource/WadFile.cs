@@ -13,6 +13,10 @@ namespace CopperSource
         const int MAXTEXTURENAME = 16;
         const int MIPLEVELS = 4;
 
+        const byte TYPE_QPIC = 0x42;
+        const byte TYPE_MIPTEX = 0x43;
+        const byte TYPE_FONT = 0x46;
+
         struct Header
         {
             public string magic;
@@ -29,6 +33,24 @@ namespace CopperSource
             public bool compressed;
             public short unused;
             public string name;
+        }
+
+        public struct CharInfo
+        {
+            public short texOffset;
+            public short charWidth;
+        }
+
+        public struct Font
+        {
+            public int width;
+            public int height;
+            public int rowCount;
+            public int rowHeight;
+            public CharInfo[] info;
+            public byte[] data;
+            public short colorCount;
+            public Color[] colorPalette;
         }
 
         // MipTexture moved to it's own file file
@@ -92,7 +114,7 @@ namespace CopperSource
                 byte[] name = reader.ReadBytes(MAXTEXTURENAME);
                 string namestring = ASCIIEncoding.ASCII.GetString(name);
                 namestring = namestring.Substring(0, namestring.IndexOf((char)0));
-                entries[i].name = namestring;
+                entries[i].name = namestring.ToUpper();
             }
         }
 
@@ -119,6 +141,13 @@ namespace CopperSource
             int entryIndex = GetFileEntry(name);
             if (entryIndex != -1)
             {
+                // not a mip texture
+                if (entries[entryIndex].type != TYPE_MIPTEX)
+                {
+                    Console.WriteLine(name + " is not a texture!");
+                    return false;
+                }
+
                 texture = ReadTexture(reader, entries[entryIndex].fileOffset);
 
                 return true;
@@ -142,7 +171,7 @@ namespace CopperSource
 
             miptex.name = namestring;
 
-            Console.WriteLine(namestring);
+            //Console.WriteLine(namestring);
 
             miptex.width = reader.ReadInt32();
             miptex.height = reader.ReadInt32();
@@ -189,6 +218,58 @@ namespace CopperSource
             return miptex;
         }
 
+        // shamelessly copied code (trollface)
+        public bool TryReadFont(string name, out Font texture)
+        {
+            texture = new Font();
+
+            int entryIndex = GetFileEntry(name);
+            if (entryIndex != -1)
+            {
+                // not a font
+                if (entries[entryIndex].type != TYPE_FONT)
+                {
+                    Console.WriteLine(name + " is not a font!");
+                    return false;
+                }
+
+                texture = ReadFont(reader, entries[entryIndex].fileOffset);
+
+                return true;
+            }
+
+            return false;
+        }
+
+        Font ReadFont(BinaryReader reader, int offset)
+        {
+            Font font = new Font();
+
+            reader.BaseStream.Position = offset;
+
+            font.width = reader.ReadInt32();
+            font.height = reader.ReadInt32();
+            font.rowCount = reader.ReadInt32();
+            font.rowHeight = reader.ReadInt32();
+
+            font.info = new CharInfo[256];
+
+            for (int i = 0; i < font.info.Length; i++)
+            {
+                font.info[i].texOffset = reader.ReadInt16();
+                font.info[i].charWidth = reader.ReadInt16();
+            }
+
+            font.data = ReadTextureData(reader, 256, font.height);
+
+            font.colorCount = reader.ReadInt16();
+
+            // hope that's right
+            font.colorPalette = ReadColorPalette(reader, font.colorCount);
+
+            return font;
+        }
+
         // set stream position before reading!
         byte[] ReadTextureData(BinaryReader reader, int width, int height)
         {
@@ -196,9 +277,9 @@ namespace CopperSource
             return colors;
         }
 
-        Color[] ReadColorPalette(BinaryReader reader)
+        Color[] ReadColorPalette(BinaryReader reader, int colors = 256)
         {
-            Color[] palette = new Color[256];
+            Color[] palette = new Color[colors];
 
             for (int i = 0; i < palette.Length; i++)
             {

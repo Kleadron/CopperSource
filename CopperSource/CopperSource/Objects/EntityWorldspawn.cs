@@ -19,7 +19,7 @@ namespace CopperSource.Objects
         {
             if (key == "wad")
             {
-                wads = value.Split(';');
+                wads = value.Split(new char[] {';'}, StringSplitOptions.RemoveEmptyEntries);
             }
 
             base.SetKeyValue(key, value);

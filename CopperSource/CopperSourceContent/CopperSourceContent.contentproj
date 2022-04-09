@@ -142,6 +142,26 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Name>test2</Name>
     </None>
+    <None Include="Wads\arctica.wad">
+      <Name>arctica</Name>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Wads\cs_dust.wad">
+      <Name>cs_dust</Name>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Wads\fonts.wad">
+      <Name>fonts</Name>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Wads\gfx.wad">
+      <Name>gfx</Name>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Include="Wads\halflife.wad">
+      <Name>halflife</Name>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Textures\tiledark.png">
@@ -159,195 +179,195 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Textures\Maptextures\-0csSandWall.bmp">
+    <None Include="Textures\Maptextures\-0csSandWall.bmp">
       <Name>-0csSandWall</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\-0Sand.bmp">
+    </None>
+    <None Include="Textures\Maptextures\-0Sand.bmp">
       <Name>-0Sand</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\-0SandRock.bmp">
+    </None>
+    <None Include="Textures\Maptextures\-0SandRock.bmp">
       <Name>-0SandRock</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\-1csSandWall.bmp">
+    </None>
+    <None Include="Textures\Maptextures\-1csSandWall.bmp">
       <Name>-1csSandWall</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\-1Sand.bmp">
+    </None>
+    <None Include="Textures\Maptextures\-1Sand.bmp">
       <Name>-1Sand</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\-1SandRock.bmp">
+    </None>
+    <None Include="Textures\Maptextures\-1SandRock.bmp">
       <Name>-1SandRock</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\-2Sand.bmp">
+    </None>
+    <None Include="Textures\Maptextures\-2Sand.bmp">
       <Name>-2Sand</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\-2SandRock.bmp">
+    </None>
+    <None Include="Textures\Maptextures\-2SandRock.bmp">
       <Name>-2SandRock</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\csSandWall2.bmp">
+    </None>
+    <None Include="Textures\Maptextures\csSandWall2.bmp">
       <Name>csSandWall2</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\MltryCrteSd.bmp">
+    </None>
+    <None Include="Textures\Maptextures\MltryCrteSd.bmp">
       <Name>MltryCrteSd</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\MltryCrteSd2.bmp">
+    </None>
+    <None Include="Textures\Maptextures\MltryCrteSd2.bmp">
       <Name>MltryCrteSd2</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\MltryCrteTp.bmp">
+    </None>
+    <None Include="Textures\Maptextures\MltryCrteTp.bmp">
       <Name>MltryCrteTp</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\SandCCrete.bmp">
+    </None>
+    <None Include="Textures\Maptextures\SandCCrete.bmp">
       <Name>SandCCrete</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\SandCrtLrgSd.bmp">
+    </None>
+    <None Include="Textures\Maptextures\SandCrtLrgSd.bmp">
       <Name>SandCrtLrgSd</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\SandCrtLrgTp.bmp">
+    </None>
+    <None Include="Textures\Maptextures\SandCrtLrgTp.bmp">
       <Name>SandCrtLrgTp</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\SandCrtSmSd.bmp">
+    </None>
+    <None Include="Textures\Maptextures\SandCrtSmSd.bmp">
       <Name>SandCrtSmSd</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\SandCrtSmTp.bmp">
+    </None>
+    <None Include="Textures\Maptextures\SandCrtSmTp.bmp">
       <Name>SandCrtSmTp</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\SandRoad.bmp">
+    </None>
+    <None Include="Textures\Maptextures\SandRoad.bmp">
       <Name>SandRoad</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\SandRoadTgt.bmp">
+    </None>
+    <None Include="Textures\Maptextures\SandRoadTgt.bmp">
       <Name>SandRoadTgt</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\SandRoadTgtA.bmp">
+    </None>
+    <None Include="Textures\Maptextures\SandRoadTgtA.bmp">
       <Name>SandRoadTgtA</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\SandRoadTgtB.bmp">
+    </None>
+    <None Include="Textures\Maptextures\SandRoadTgtB.bmp">
       <Name>SandRoadTgtB</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\SandTrim.bmp">
+    </None>
+    <None Include="Textures\Maptextures\SandTrim.bmp">
       <Name>SandTrim</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\SandWllDoor.bmp">
+    </None>
+    <None Include="Textures\Maptextures\SandWllDoor.bmp">
       <Name>SandWllDoor</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\SandWllDoor2.bmp">
+    </None>
+    <None Include="Textures\Maptextures\SandWllDoor2.bmp">
       <Name>SandWllDoor2</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\SandWllWndw.bmp">
+    </None>
+    <None Include="Textures\Maptextures\SandWllWndw.bmp">
       <Name>SandWllWndw</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\SandWllWndw2.bmp">
+    </None>
+    <None Include="Textures\Maptextures\SandWllWndw2.bmp">
       <Name>SandWllWndw2</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\SandWllWndw3.bmp">
+    </None>
+    <None Include="Textures\Maptextures\SandWllWndw3.bmp">
       <Name>SandWllWndw3</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Effects\LightmapEffect.fx">
@@ -394,233 +414,231 @@
       <Install>true</Install>
     </BootstrapperPackage>
   </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
-    <Folder Include="Wads\" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="Textures\Maptextures\clip.png">
+    <None Include="Textures\Maptextures\clip.png">
       <Name>clip</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\invisible.png">
+    </None>
+    <None Include="Textures\Maptextures\invisible.png">
       <Name>invisible</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\nodraw.png">
+    </None>
+    <None Include="Textures\Maptextures\nodraw.png">
       <Name>nodraw</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\sky.png">
+    </None>
+    <None Include="Textures\Maptextures\sky.png">
       <Name>sky</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Textures\Maptextures\trigger.png">
+    <None Include="Textures\Maptextures\trigger.png">
       <Name>trigger</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Textures\Maptextures\-3Sand.bmp">
+    <None Include="Textures\Maptextures\-3Sand.bmp">
       <Name>-3Sand</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Textures\Maptextures\act_wall01_sn.bmp">
+    <None Include="Textures\Maptextures\act_wall01_sn.bmp">
       <Name>act_wall01_sn</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\arct_wall00.bmp">
+    </None>
+    <None Include="Textures\Maptextures\arct_wall00.bmp">
       <Name>arct_wall00</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\arct_wall01.bmp">
+    </None>
+    <None Include="Textures\Maptextures\arct_wall01.bmp">
       <Name>arct_wall01</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\brdly1.bmp">
+    </None>
+    <None Include="Textures\Maptextures\brdly1.bmp">
       <Name>brdly1</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\brdly2.bmp">
+    </None>
+    <None Include="Textures\Maptextures\brdly2.bmp">
       <Name>brdly2</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\brdly2_brk.bmp">
+    </None>
+    <None Include="Textures\Maptextures\brdly2_brk.bmp">
       <Name>brdly2_brk</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\brdly3.bmp">
+    </None>
+    <None Include="Textures\Maptextures\brdly3.bmp">
       <Name>brdly3</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\brdly4.bmp">
+    </None>
+    <None Include="Textures\Maptextures\brdly4.bmp">
       <Name>brdly4</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\brdly5.bmp">
+    </None>
+    <None Include="Textures\Maptextures\brdly5.bmp">
       <Name>brdly5</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\cardbox1_sn.bmp">
+    </None>
+    <None Include="Textures\Maptextures\cardbox1_sn.bmp">
       <Name>cardbox1_sn</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\cardbox2_sn.bmp">
+    </None>
+    <None Include="Textures\Maptextures\cardbox2_sn.bmp">
       <Name>cardbox2_sn</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\cardbox3_sn.bmp">
+    </None>
+    <None Include="Textures\Maptextures\cardbox3_sn.bmp">
       <Name>cardbox3_sn</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\cardbox4_sn.bmp">
+    </None>
+    <None Include="Textures\Maptextures\cardbox4_sn.bmp">
       <Name>cardbox4_sn</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\cardboxbot1_sn.bmp">
+    </None>
+    <None Include="Textures\Maptextures\cardboxbot1_sn.bmp">
       <Name>cardboxbot1_sn</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\cardboxtop1_sn.bmp">
+    </None>
+    <None Include="Textures\Maptextures\cardboxtop1_sn.bmp">
       <Name>cardboxtop1_sn</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\cardboxtop2_sn.bmp">
+    </None>
+    <None Include="Textures\Maptextures\cardboxtop2_sn.bmp">
       <Name>cardboxtop2_sn</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\comp1.bmp">
+    </None>
+    <None Include="Textures\Maptextures\comp1.bmp">
       <Name>comp1</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\complex_sign1.bmp">
+    </None>
+    <None Include="Textures\Maptextures\complex_sign1.bmp">
       <Name>complex_sign1</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\snow.bmp">
+    </None>
+    <None Include="Textures\Maptextures\snow.bmp">
       <Name>snow</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\snow_cliff1.bmp">
+    </None>
+    <None Include="Textures\Maptextures\snow_cliff1.bmp">
       <Name>snow_cliff1</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\snow_cliff2.bmp">
+    </None>
+    <None Include="Textures\Maptextures\snow_cliff2.bmp">
       <Name>snow_cliff2</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\snow_cliff3.bmp">
+    </None>
+    <None Include="Textures\Maptextures\snow_cliff3.bmp">
       <Name>snow_cliff3</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\{metal01.bmp">
+    </None>
+    <None Include="Textures\Maptextures\{metal01.bmp">
       <Name>{metal01</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\{xf_generic86.bmp">
+    </None>
+    <None Include="Textures\Maptextures\{xf_generic86.bmp">
       <Name>{xf_generic86</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
-    <Compile Include="Textures\Maptextures\{xf_ladder44.bmp">
+    </None>
+    <None Include="Textures\Maptextures\{xf_ladder44.bmp">
       <Name>{xf_ladder44</Name>
       <Importer>TextureImporter</Importer>
       <Processor>TextureProcessor</Processor>
       <ProcessorParameters_GenerateMipmaps>True</ProcessorParameters_GenerateMipmaps>
       <ProcessorParameters_ColorKeyColor>0, 0, 255, 255</ProcessorParameters_ColorKeyColor>
-    </Compile>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Textures\ai_detail.png">

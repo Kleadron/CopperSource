@@ -23,6 +23,7 @@ BEGIN_CONSTANTS
 
 	float  Gamma = 2.2f;
 	float Brightness = 0.91f;
+	float AlphaCutoff = 0.5f;
 
 MATRIX_CONSTANTS
 
@@ -116,6 +117,9 @@ VSOutputTx2NoFog VSDualTextureVcNoFog(VSInputTx2Vc vin)
 float4 PSDualTexture(PSInputTx2 pin) : SV_Target0
 {
     float4 color = SAMPLE_TEXTURE(TexDiffuse, pin.TexCoord);
+	//if (color.a <= AlphaCutoff)
+	//	discard;
+
     float4 light = SAMPLE_TEXTURE(TexLightmap, pin.TexCoord2);
 
     color.rgb = GammaFunc(color.rgb);
@@ -132,6 +136,9 @@ float4 PSDualTexture(PSInputTx2 pin) : SV_Target0
 float4 PSDualTextureNoFog(PSInputTx2NoFog pin) : SV_Target0
 {
     float4 color = SAMPLE_TEXTURE(TexDiffuse, pin.TexCoord);
+	//if (color.a <= AlphaCutoff)
+	//	discard;
+
     float4 light = SAMPLE_TEXTURE(TexLightmap, pin.TexCoord2);
 
 	color.rgb = GammaFunc(color.rgb);
@@ -147,6 +154,9 @@ float4 PSDualTextureNoFog(PSInputTx2NoFog pin) : SV_Target0
 float4 PSDualTextureDetail(PSInputTx2 pin) : SV_Target0
 {
     float4 color = SAMPLE_TEXTURE(TexDiffuse, pin.TexCoord);
+	//if (color.a <= AlphaCutoff)
+	//	discard;
+
     float4 light = SAMPLE_TEXTURE(TexLightmap, pin.TexCoord2);
 	float4 detail = SAMPLE_TEXTURE(TexDetail, pin.TexCoord * DetailScale);
 
@@ -166,6 +176,9 @@ float4 PSDualTextureDetail(PSInputTx2 pin) : SV_Target0
 float4 PSDualTextureDetailNoFog(PSInputTx2NoFog pin) : SV_Target0
 {
     float4 color = SAMPLE_TEXTURE(TexDiffuse, pin.TexCoord);
+	//if (color.a <= AlphaCutoff)
+	//	discard;
+
     float4 light = SAMPLE_TEXTURE(TexLightmap, pin.TexCoord2);
 	float4 detail = SAMPLE_TEXTURE(TexDetail, pin.TexCoord * DetailScale);
 

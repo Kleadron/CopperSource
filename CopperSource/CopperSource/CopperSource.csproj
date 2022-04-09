@@ -110,6 +110,7 @@
     <Compile Include="BspModel.cs" />
     <Compile Include="DataHelper.cs" />
     <Compile Include="EffectHelpers.cs" />
+    <Compile Include="HLFont.cs" />
     <Compile Include="IEntityReader.cs" />
     <Compile Include="MipTexture.cs" />
     <Compile Include="Objects\BrushEntity.cs" />

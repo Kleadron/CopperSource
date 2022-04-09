@@ -44,10 +44,11 @@ namespace CopperSource
         float cameraYawAngle = 0f;
         float cameraPitchAngle = 0f;
 
-        string mapToLoad = "Content/Maps/c1a0.bsp";
+        string mapToLoad = "Content/Maps/arctic_incident_2.bsp";
 
         //BspFile mapFile;
         SpriteFont font;
+        HLFont hlFont;
 
         BasicEffect lineEffect;
         BasicEffect worldEffect;
@@ -112,6 +113,8 @@ namespace CopperSource
         BlendState multiplyBS;
 
         DepthStencilState overlayDSS;
+
+        SamplerState worldSS;
 
         bool wireframeOn = false;
         bool freezeVisibility = false;
@@ -226,6 +229,16 @@ namespace CopperSource
             overlayDSS.DepthBufferFunction = CompareFunction.LessEqual;
             overlayDSS.DepthBufferWriteEnable = false;
             overlayDSS.DepthBufferEnable = true;
+
+            worldSS = new SamplerState();
+            worldSS.AddressU = TextureAddressMode.Wrap;
+            worldSS.AddressV = TextureAddressMode.Wrap;
+            worldSS.Filter = TextureFilter.Point;
+            worldSS.MaxMipLevel = 0;
+            worldSS.MaxAnisotropy = 16;
+            //worldSS.
+            //worldSS.
+            
 
             Window.Title = "CopperSource - " + mapToLoad;
 
@@ -456,18 +469,54 @@ namespace CopperSource
         }
 
         MipTexture missingTex;
+        // Mip mapped textures in XNA generate more than 4 levels which is kinda an issue
+        bool enableMipMaps = false;
 
         Texture2D LoadMipTex(MipTexture miptex)
         {
-            Texture2D tex = new Texture2D(GraphicsDevice, miptex.width, miptex.height, false, SurfaceFormat.Color);
-            Color[] colors = new Color[miptex.width * miptex.height];
+            Texture2D tex = new Texture2D(GraphicsDevice, miptex.width, miptex.height, miptex.mip1data != null && enableMipMaps, SurfaceFormat.Color);
 
+            Color[] colors = new Color[miptex.width * miptex.height];
             for (int i = 0; i < colors.Length; i++)
             {
                 colors[i] = miptex.colorPalette[miptex.mip0data[i]];
             }
+            tex.SetData(0, null, colors, 0, colors.Length);
 
-            tex.SetData(colors);
+            //int mipcount = tex.LevelCount;
+
+            if (enableMipMaps)
+            {
+                if (miptex.mip1data != null)
+                {
+                    int mip1length = (miptex.width / 2) * (miptex.height / 2);
+                    for (int i = 0; i < mip1length; i++)
+                    {
+                        colors[i] = miptex.colorPalette[miptex.mip1data[i]];
+                    }
+                    tex.SetData(1, null, colors, 0, mip1length);
+                }
+
+                if (miptex.mip2data != null)
+                {
+                    int mip2length = (miptex.width / 4) * (miptex.height / 4);
+                    for (int i = 0; i < mip2length; i++)
+                    {
+                        colors[i] = miptex.colorPalette[miptex.mip2data[i]];
+                    }
+                    tex.SetData(2, null, colors, 0, mip2length);
+                }
+
+                if (miptex.mip3data != null)
+                {
+                    int mip3length = (miptex.width / 8) * (miptex.height / 8);
+                    for (int i = 0; i < mip3length; i++)
+                    {
+                        colors[i] = miptex.colorPalette[miptex.mip3data[i]];
+                    }
+                    tex.SetData(3, null, colors, 0, mip3length);
+                }
+            }
 
             //tex.Name = miptex.name;
 
@@ -514,6 +563,12 @@ namespace CopperSource
 
             worldEffect.TextureEnabled = true;
             grid = worldEffect.Texture = Content.Load<Texture2D>("Textures/tiledark_s");
+
+            WadFile fontWad = new WadFile("Content/Wads/gfx.wad");
+            WadFile.Font fontData;
+            fontWad.TryReadFont("CONCHARS", out fontData);
+            hlFont = new HLFont(GraphicsDevice, fontData);
+            fontWad.Close();
 
             BspFile mapFile = new BspFile(mapToLoad);
             //File.WriteAllText("entities.txt", mapFile.entityData);
@@ -617,7 +672,11 @@ namespace CopperSource
             textureNameToID["missing"].Add(0);
 
             EntityWorldspawn worldspawn = GetEntityByType<EntityWorldspawn>();
-            WadFile[] wads = new WadFile[worldspawn.wads.Length];
+
+            int wadCount = 0;
+            if (worldspawn.wads != null)
+                wadCount = worldspawn.wads.Length;
+            WadFile[] wads = new WadFile[wadCount];
 
             for (int i = 0; i < wads.Length; i++)
             {
@@ -637,7 +696,7 @@ namespace CopperSource
             for (int i = 0; i < mapFile.textures.Length; i++)
             {
                 MipTexture miptex = mapFile.textures[i];
-                string fileName = miptex.name;
+                string fileName = miptex.name.ToUpper();
                 string realName = miptex.name;
                 bool isRandomized = false;
                 int texNum = 0;
@@ -701,6 +760,8 @@ namespace CopperSource
                 {
                     textureNameToID[realName] = new List<int>();
                     textureNameToID[realName].Add(0);
+
+                    Console.WriteLine("Cannot load texture " + fileName);
                 }
             }
 
@@ -1429,8 +1490,9 @@ namespace CopperSource
                 GraphicsDevice.RasterizerState = wireframeRS;
 
             // diffuse texture and detail texture
-            GraphicsDevice.SamplerStates[0] = SamplerState.PointWrap; // AnisotropicWrap
-            GraphicsDevice.SamplerStates[2] = SamplerState.PointWrap;
+            GraphicsDevice.SamplerStates[0] = worldSS; // AnisotropicWrap
+            GraphicsDevice.SamplerStates[2] = worldSS;
+
             // lightmap texture
             //GraphicsDevice.SamplerStates[1] = SamplerState.PointWrap;
             GraphicsDevice.SamplerStates[1] = SamplerState.LinearClamp;
@@ -1536,15 +1598,15 @@ namespace CopperSource
         int debugLineOffset = 0;
         void DrawDebugLine(string s, Color color)
         {
-            spriteBatch.DrawString(font, s, new Vector2(0, debugLineOffset) + Vector2.One, Color.Black);
-            spriteBatch.DrawString(font, s, new Vector2(0, debugLineOffset), color);
-            debugLineOffset += font.LineSpacing;
+            //spriteBatch.DrawString(font, s, new Vector2(0, debugLineOffset) + Vector2.One, Color.Black);
+            spriteBatch.DrawString(hlFont, s, new Vector2(0, debugLineOffset), color);
+            debugLineOffset += hlFont.LineSpacing;
         }
         void DrawDebugLine(StringBuilder s, Color color)
         {
-            spriteBatch.DrawString(font, s, new Vector2(0, debugLineOffset) + Vector2.One, Color.Black);
-            spriteBatch.DrawString(font, s, new Vector2(0, debugLineOffset), color);
-            debugLineOffset += font.LineSpacing;
+            //spriteBatch.DrawString(font, s, new Vector2(0, debugLineOffset) + Vector2.One, Color.Black);
+            spriteBatch.DrawString(hlFont, s, new Vector2(0, debugLineOffset), color);
+            debugLineOffset += hlFont.LineSpacing;
         }
 
         int timerOffset = 0;

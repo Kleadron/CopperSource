@@ -469,7 +469,7 @@ namespace CopperSource
 
                 textures[i].name = namestring;
 
-                Console.WriteLine(namestring);
+                //Console.WriteLine(namestring);
 
                 textures[i].width = reader.ReadInt32();
                 textures[i].height = reader.ReadInt32();
