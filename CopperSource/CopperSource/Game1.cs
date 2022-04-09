@@ -30,6 +30,8 @@ namespace CopperSource
         public Vector3 playerPosition = new Vector3(0, 0, 0);
         public Vector3 visPosition;
 
+        string dataDirectory = "ksoft";
+
         Matrix modelTransform;
         // absolutely not correct and needs testing
         public Vector3 TransformedVisPosition
