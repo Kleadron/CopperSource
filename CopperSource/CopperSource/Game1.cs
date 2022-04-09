@@ -31,11 +31,13 @@ namespace CopperSource
         public Vector3 visPosition;
 
         Matrix modelTransform;
+        // absolutely not correct and needs testing
         public Vector3 TransformedVisPosition
         {
             get
             {
-                return Vector3.Transform(visPosition, modelTransform);
+                //return Vector3.Transform(visPosition, modelTransform);
+                return visPosition;
             }
         }
 
@@ -82,6 +84,24 @@ namespace CopperSource
             public int start;       // start of texture group's indices
             public int numVerts;    // number of vertices in group
             public int triCount;    // number of triangles in group
+        }
+
+        //const int MODELQUEUE_STATIC = 0;
+        //const int MODELQUEUE_DYNAMIC = 1;
+        //Queue<ModelDrawEntry>[] modelDrawQueue = new Queue<ModelDrawEntry>[] 
+        //{
+        //    new Queue<ModelDrawEntry>(),
+        //    new Queue<ModelDrawEntry>()
+        //};
+
+        Queue<ModelDrawEntry> modelQueueStatic = new Queue<ModelDrawEntry>();
+        Queue<ModelDrawEntry> modelQueueDynamic = new Queue<ModelDrawEntry>();
+
+        struct ModelDrawEntry
+        {
+            public BspModel model;
+            public Matrix transform;
+            public bool[] vislist;
         }
 
         Texture2D grid, pixel, graypixel, detailTex;
@@ -151,7 +171,7 @@ namespace CopperSource
 
             //TargetElapsedTime = TimeSpan.FromSeconds(1d / 30d);
 
-            bool capFramerate = true;
+            bool capFramerate = false;
             IsFixedTimeStep = capFramerate;
             graphics.SynchronizeWithVerticalRetrace = capFramerate;
         }
@@ -1106,8 +1126,8 @@ namespace CopperSource
 
         public void SetModelTransform(Matrix world)
         {
-            lightmapWorldEffect.World = world;
-            worldEffect.World = world;
+            //lightmapWorldEffect.World = world;
+            //worldEffect.World = world;
             modelTransform = world;
         }
 
@@ -1146,6 +1166,157 @@ namespace CopperSource
                 else if (node.frontLeaf != null)
                     DrawLeaf(node.frontLeaf);
             }
+        }
+
+        public void QueueStaticBspModel(BspModel model, bool[] vislist = null)
+        {
+            ModelDrawEntry entry = new ModelDrawEntry();
+            entry.model = model;
+            entry.transform = Matrix.Identity;
+            entry.vislist = vislist;
+            modelQueueStatic.Enqueue(entry);
+        }
+
+        public void QueueDynamicBspModel(BspModel model, Matrix transform, bool[] vislist = null)
+        {
+            ModelDrawEntry entry = new ModelDrawEntry();
+            entry.model = model;
+            entry.transform = transform;
+            entry.vislist = vislist;
+            modelQueueDynamic.Enqueue(entry);
+        }
+
+        void BuildBatchIndices()
+        {
+            dynamicIndex = 0;
+            GraphicsDevice.Indices = null;
+            int numTextures = textures.Length;
+            for (int i = 0; i < numTextures; i++)
+            {
+                Queue<Face> faceQueue = textureFaceQueues[i];
+
+                if (faceQueue.Count == 0)
+                    continue;
+
+                RenderGroup group = new RenderGroup();
+                group.start = dynamicIndex;
+                group.texture = i;
+
+                while (faceQueue.Count > 0)
+                {
+                    Face face = faceQueue.Dequeue();
+                    for (int j = 0; j < face.indicesLength; j++)
+                    {
+                        //if (dynamicIndex < dynamicIndices.Length)
+                        dynamicIndices[dynamicIndex++] = indices[face.indicesStart + j];
+                    }
+                    group.numVerts += face.numVerts;
+                    group.triCount += face.triCount;
+                    drawnFaces++;
+                }
+
+                textureGroupQueue.Enqueue(group);
+            }
+            // if no triangles were added don't set data otherwise xna will scream at you
+            if (dynamicIndex > 0)
+                dib.SetData(dynamicIndices, 0, dynamicIndex);
+
+            GraphicsDevice.SetVertexBuffer(vb);
+            GraphicsDevice.Indices = dib;
+        }
+
+        void DrawModelBatch(Matrix transform)
+        {
+            while (textureGroupQueue.Count > 0)
+            {
+                RenderGroup group = textureGroupQueue.Dequeue();
+                //worldEffect.LightingEnabled = true;
+
+                //GraphicsDevice.BlendState = BlendState.Opaque;
+                //GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+
+                // set up the appropriate effects
+                if (overdrawView)
+                {
+                    overdrawEffect.World = transform;
+                    overdrawPass.Apply();
+                }
+                else if (defaultLighting)
+                {
+                    worldEffect.World = transform;
+                    worldEffect.Texture = textures[group.texture];
+                    defaultPass.Apply();
+                }
+                else
+                {
+                    lightmapWorldEffect.World = transform;
+                    lightmapWorldEffect.DiffuseTexture = textures[group.texture];
+                    lightmapWorldEffect.DetailTextureEnabled = false;
+                    lightmapWorldEffect.LightmapTexture = graypixel;
+                    lightmapPass.Apply();
+                }
+
+                GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, group.start, group.numVerts, group.start, group.triCount);
+                drawnGroups++;
+            }
+        }
+
+        int staticModels = 0;
+        int dynamicModels = 0;
+
+        void DrawBspQueue()
+        {
+            staticModels = modelQueueStatic.Count;
+            dynamicModels = modelQueueDynamic.Count;
+
+            if (overdrawView)
+            {
+                GraphicsDevice.BlendState = BlendState.Additive;
+                GraphicsDevice.DepthStencilState = DepthStencilState.None;
+            }
+
+            // draw static models, all non-transformed models can be drawn at once
+            ClearFaceQueueBlock();
+            SetModelTransform(Matrix.Identity);
+
+            while (modelQueueStatic.Count > 0)
+            {
+                ModelDrawEntry entry = modelQueueStatic.Dequeue();
+
+                if (entry.vislist == null)
+                {
+                    RecursiveTreeDraw(entry.model.rootNode, TransformedVisPosition);
+                }
+                else
+                {
+                    RecursiveTreeDraw(entry.model.rootNode, TransformedVisPosition, entry.vislist);
+                }
+            }
+
+            BuildBatchIndices();
+            DrawModelBatch(Matrix.Identity);
+
+            // draw dynamic models individually since they most likely have different transforms
+            while (modelQueueDynamic.Count > 0)
+            {
+                ModelDrawEntry entry = modelQueueDynamic.Dequeue();
+
+                ClearFaceQueueBlock();
+                SetModelTransform(entry.transform);
+
+                if (entry.vislist == null)
+                {
+                    RecursiveTreeDraw(entry.model.rootNode, TransformedVisPosition);
+                }
+                else
+                {
+                    RecursiveTreeDraw(entry.model.rootNode, TransformedVisPosition, entry.vislist);
+                }
+
+                BuildBatchIndices();
+                DrawModelBatch(entry.transform);
+            }
+
         }
 
         void DrawScene(GameTime gameTime, int addRotation, string viewName = null)
@@ -1202,131 +1373,57 @@ namespace CopperSource
                 UpdateVisiblityFromLeaf(cameraLeaf);
 
                 // do frustum check on visible leaves
-                for (int i = 0; i < leaves.Length; i++)
-                {
-                    Leaf leaf = leaves[i];
-                    if (leafVisList[i] && leaf != null)
-                    {
-                        ContainmentType contain = viewFrustum.Contains(leaf.bb);
-                        leafVisList[i] = contain == ContainmentType.Contains || contain == ContainmentType.Intersects;
-                    }
-                    else
-                    {
-                        leafVisList[i] = false;
-                    }
-                }
+                //for (int i = 0; i < leaves.Length; i++)
+                //{
+                //    Leaf leaf = leaves[i];
+                //    if (leafVisList[i] && leaf != null)
+                //    {
+                //        ContainmentType contain = viewFrustum.Contains(leaf.bb);
+                //        leafVisList[i] = contain == ContainmentType.Contains || contain == ContainmentType.Intersects;
+                //    }
+                //    else
+                //    {
+                //        leafVisList[i] = false;
+                //    }
+                //}
             }
 
-            GraphicsDevice.SetVertexBuffer(vb);
-            GraphicsDevice.Indices = ib;
-
-            ClearFaceQueueBlock();
-
-            SetModelTransform(Matrix.Identity);
-            //try
-            //{
-                RecursiveTreeDraw(rootNode, TransformedVisPosition, leafVisList);
-            //}
-            //catch (Exception)
-            //{
-
-            //}
-
-            dynamicIndex = 0;
-            int numTextures = textures.Length;
-            for (int i = 0; i < numTextures; i++)
-            {
-                Queue<Face> faceQueue = textureFaceQueues[i];
-
-                if (faceQueue.Count == 0)
-                    continue;
-
-                RenderGroup group = new RenderGroup();
-                group.start = dynamicIndex;
-                group.texture = i;
-
-                while (faceQueue.Count > 0)
-                {
-                    Face face = faceQueue.Dequeue();
-                    for (int j = 0; j < face.indicesLength; j++)
-                    {
-                        //if (dynamicIndex < dynamicIndices.Length)
-                            dynamicIndices[dynamicIndex++] = indices[face.indicesStart + j];
-                    }
-                    group.numVerts += face.numVerts;
-                    group.triCount += face.triCount;
-                    drawnFaces++;
-                }
-
-                textureGroupQueue.Enqueue(group);
-            }
-            // if no triangles were added don't set data otherwise xna will scream at you
-            if (dynamicIndex > 0)
-                dib.SetData(dynamicIndices, 0, dynamicIndex);
-
-            // ======================== DRAW DRAW DRAW DRAW
-
-            if (overdrawView)
-            {
-                GraphicsDevice.BlendState = BlendState.Additive;
-                GraphicsDevice.DepthStencilState = DepthStencilState.None;
-            }
-
-            GraphicsDevice.Indices = dib;
-            while (textureGroupQueue.Count > 0)
-            {
-                RenderGroup group = textureGroupQueue.Dequeue();
-                //worldEffect.LightingEnabled = true;
-
-                //GraphicsDevice.BlendState = BlendState.Opaque;
-                //GraphicsDevice.DepthStencilState = DepthStencilState.Default;
-
-                // set up the appropriate effects
-                if (overdrawView)
-                {
-                    overdrawPass.Apply();
-                } 
-                else if (defaultLighting)
-                {
-                    worldEffect.Texture = textures[group.texture];
-                    defaultPass.Apply();
-                }
-                else
-                {
-                    lightmapWorldEffect.DiffuseTexture = textures[group.texture];
-                    lightmapWorldEffect.DetailTextureEnabled = false;
-                    lightmapWorldEffect.LightmapTexture = graypixel;
-                    lightmapPass.Apply();
-                }
-                
-                GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, 0, group.start, group.numVerts, group.start, group.triCount);
-                drawnGroups++;
-            }
+            //DrawBspModel(models[0], Matrix.Identity, leafVisList);
             
-            // ======================== DRAW DRAW DRAW DRAW
 
             //for (int i = 1; i < models.Length; i++)
             //{
             //    BspModel model = models[i];
             //    Leaf leaf = GetLeafFromPosition(model.center);
-            //    bool isVisible = leafVisList[leaf.id];
+            //    bool isVisible = leafVisList[leaf.id] || leaf.id == 0;
             //    if (isVisible)
             //    {
-            //        ContainmentType viewContain = viewFrustum.Contains(model.bb);
-            //        if (viewContain == ContainmentType.Contains || viewContain == ContainmentType.Intersects)
+            //        //ContainmentType viewContain = viewFrustum.Contains(model.bb);
+            //        //if (viewContain == ContainmentType.Contains || viewContain == ContainmentType.Intersects)
             //        {
             //            RecursiveTreeDraw(models[i].rootNode, model.center);
             //        }
             //    }
             //}
 
-            //for (int i = 0; i < entities.Length; i++)
-            //{
-            //    if (entities[i] != null)
-            //    {
-            //        entities[i].Draw(delta, total);
-            //    }
-            //}
+            
+
+            // ======================== DRAW DRAW DRAW DRAW
+
+            
+            QueueStaticBspModel(models[0], leafVisList);
+            
+            // ======================== DRAW DRAW DRAW DRAW
+
+            for (int i = 0; i < entities.Length; i++)
+            {
+                if (entities[i] != null)
+                {
+                    entities[i].Draw(delta, total);
+                }
+            }
+
+            DrawBspQueue();
 
             //spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
             //foreach (Entity entity in entities)
@@ -1477,13 +1574,16 @@ namespace CopperSource
 
             DrawDebugLine("Camera position: " + playerPosition.ToString(), Color.White);
 
-            string visString = "Leaf/PVS: " + cameraLeaf.id.ToString() + "/" + cameraLeaf.visCluster + " " + leafVisList[cameraLeaf.id].ToString();
+            string visString = "Leaf/PVS: " + cameraLeaf.id.ToString() + "/" + cameraLeaf.visCluster;
             if (freezeVisibility)
                 visString += " (VIS FROZEN)";
             DrawDebugLine(visString, Color.White);
 
             string drawCountString = "Drawn Leaves/Faces/Groups: " + drawnLeaves + "/" + drawnFaces + "/" + drawnGroups;
             DrawDebugLine(drawCountString, Color.White);
+
+            string modelQueueString = "Static/Dynamic Models: " + staticModels + "/" + dynamicModels;
+            DrawDebugLine(modelQueueString, Color.White);
 
             DrawDebugLine("Duplicate Face Queues: " + duplicateFaceQueues, Color.White);
 

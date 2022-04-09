@@ -32,6 +32,14 @@ namespace CopperSource.Objects
             }
         }
 
+        public bool IsOriginInsideWorld
+        {
+            get
+            {
+                return game.GetLeafFromPosition(WorldOrigin).id != 0;
+            }
+        }
+
         public Entity(Game1 game)
         {
             this.game = game;

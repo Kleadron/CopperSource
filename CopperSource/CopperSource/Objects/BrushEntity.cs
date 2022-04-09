@@ -30,10 +30,19 @@ namespace CopperSource.Objects
 
         public override void Draw(float delta, float total)
         {
-            if (IsOriginVisible)
+            if (IsOriginVisible || !IsOriginInsideWorld)
             {
-                game.SetModelTransform(Matrix.CreateTranslation(position));
-                game.RecursiveTreeDraw(model.rootNode, game.TransformedVisPosition);
+                //game.SetModelTransform(Matrix.CreateTranslation(position));
+                //game.RecursiveTreeDraw(model.rootNode, game.TransformedVisPosition);
+                //game.DrawBspModel(model, Matrix.CreateTranslation(position));
+                if (position != Vector3.Zero)
+                {
+                    game.QueueDynamicBspModel(model, Matrix.CreateTranslation(position));
+                }
+                else
+                {
+                    game.QueueStaticBspModel(model);
+                }
             }
         }
     }

@@ -30,7 +30,8 @@ namespace CopperSource
         public const uint LUMP_MODELS = 14;
         public const uint LUMPS_COUNT = 15;
 
-        public const uint VERSION = 30;
+        public const uint VERSION_QUAKE = 29;
+        public const uint VERSION_GOLDSRC = 30;
         public const uint MAX_MAP_HULLS = 4;
 
         public struct Lump
@@ -321,10 +322,10 @@ namespace CopperSource
         {
             // Read version and check it
             header.version = reader.ReadUInt32();
-            if (header.version != VERSION)
+            if (header.version != VERSION_GOLDSRC)
             {
                 //throw new Exception("Map version mismatch, must be " + VERSION + ", was " + header.version);
-                Console.WriteLine("Map version mismatch, should be " + VERSION + ", was " + header.version);
+                Console.WriteLine("Map version mismatch, should be " + VERSION_GOLDSRC + ", was " + header.version);
             }
 
             // Read lumps
