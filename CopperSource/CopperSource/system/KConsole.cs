@@ -75,7 +75,7 @@ namespace CopperSource
             }
         }
 
-        public static void Draw(SpriteBatch sb, SpriteFont font, float delta, float total)
+        public static void Draw(SpriteBatch sb, HLFont font, float delta, float total)
         {
             int linePosition = screenHeight - (font.LineSpacing * 2);
 
@@ -96,7 +96,7 @@ namespace CopperSource
                     }
                     if (colorMultiplier > 0f)
                     {
-                        sb.DrawString(font, logEntries[i].text, new Vector2(0, linePosition) + Vector2.One, Color.Black * colorMultiplier);
+                        //sb.DrawString(font, logEntries[i].text, new Vector2(0, linePosition) + Vector2.One, Color.Black * colorMultiplier);
                         sb.DrawString(font, logEntries[i].text, new Vector2(0, linePosition), color * colorMultiplier);
                     }
                 }
@@ -126,12 +126,12 @@ namespace CopperSource
             int caretPos = Input.CarotPosition + beginning.Length;
             float offset = font.MeasureString(prompt.Substring(0, caretPos)).X;
 
-            sb.DrawString(font, prompt, new Vector2(0, screenHeight - font.LineSpacing) + Vector2.One, Color.Black);
+            //sb.DrawString(font, prompt, new Vector2(0, screenHeight - font.LineSpacing) + Vector2.One, Color.Black);
             sb.DrawString(font, prompt, new Vector2(0, screenHeight - font.LineSpacing), color);
 
             if (Input.TimeSinceInputBufferModified % 0.5f < 0.25f)
             {
-                sb.DrawString(font, cursor, new Vector2(offset, screenHeight - font.LineSpacing) + Vector2.One, Color.Black);
+                //sb.DrawString(font, cursor, new Vector2(offset, screenHeight - font.LineSpacing) + Vector2.One, Color.Black);
                 sb.DrawString(font, cursor, new Vector2(offset, screenHeight - font.LineSpacing), color);
             }
         }

@@ -59,6 +59,21 @@ namespace CopperSource
             }
             texture.SetData(0, null, colors, 0, colors.Length);
         }
+
+        public Vector2 MeasureString(string s)
+        {
+            int width = 0;
+
+            for (int i = 0; i < s.Length; i++)
+            {
+                Rectangle srcRect = characterRects[s[i] % 256];
+                width += srcRect.Width;
+            }
+
+            int height = rowHeight;
+
+            return new Vector2(width, height);
+        }
     }
 
     public static class SpriteBatchExtensions

@@ -47,7 +47,7 @@ namespace CopperSource
         string mapToLoad = "Content/Maps/arctic_incident_2.bsp";
 
         //BspFile mapFile;
-        SpriteFont font;
+        //SpriteFont font;
         HLFont hlFont;
 
         BasicEffect lineEffect;
@@ -533,7 +533,7 @@ namespace CopperSource
             spriteBatch = new SpriteBatch(GraphicsDevice);
 
             // TODO: use this.Content to load your game content here
-            font = Content.Load<SpriteFont>("Fonts/Font");
+            //font = Content.Load<SpriteFont>("Fonts/Font");
 
             pixel = Content.Load<Texture2D>("Textures/pixel");
             graypixel = Content.Load<Texture2D>("Textures/graypixel");
@@ -564,9 +564,9 @@ namespace CopperSource
             worldEffect.TextureEnabled = true;
             grid = worldEffect.Texture = Content.Load<Texture2D>("Textures/tiledark_s");
 
-            WadFile fontWad = new WadFile("Content/Wads/gfx.wad");
+            WadFile fontWad = new WadFile("Content/Wads/fonts.wad"); // gfx.wad
             WadFile.Font fontData;
-            fontWad.TryReadFont("CONCHARS", out fontData);
+            fontWad.TryReadFont("FONT2", out fontData); // CONCHARS
             hlFont = new HLFont(GraphicsDevice, fontData);
             fontWad.Close();
 
@@ -1560,35 +1560,35 @@ namespace CopperSource
 
             // ======================== DRAW DRAW DRAW DRAW
 
-            //spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
-            //foreach (Entity entity in entities)
-            //{
-            //    if (entity != null)
-            //    {
-            //        bool isVisible = entity.IsOriginVisible;
+            spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
+            foreach (Entity entity in entities)
+            {
+                if (entity != null)
+                {
+                    bool isVisible = entity.IsOriginVisible;
 
-            //        if (!isVisible)
-            //            continue;
+                    if (!isVisible)
+                        continue;
 
-            //        Vector3 screenPosition = GraphicsDevice.Viewport.Project(entity.WorldOrigin, projection, view, Matrix.Identity);
-            //        if (screenPosition.Z >= 0 && screenPosition.Z <= 1)
-            //        {
-            //            Vector2 labelPos = new Vector2((int)screenPosition.X, (int)screenPosition.Y);
+                    Vector3 screenPosition = GraphicsDevice.Viewport.Project(entity.WorldOrigin, projection, view, Matrix.Identity);
+                    if (screenPosition.Z >= 0 && screenPosition.Z <= 1)
+                    {
+                        Vector2 labelPos = new Vector2((int)screenPosition.X, (int)screenPosition.Y);
 
-            //            spriteBatch.Draw(pixel, new Rectangle((int)labelPos.X - 8, (int)labelPos.Y - 8, 16, 16), Color.DarkRed);
+                        spriteBatch.Draw(pixel, new Rectangle((int)labelPos.X - 8, (int)labelPos.Y - 8, 16, 16), Color.DarkRed);
 
-            //            spriteBatch.DrawString(font, entity.classname, labelPos + Vector2.One, Color.Black);
-            //            spriteBatch.DrawString(font, entity.classname, labelPos, Color.Red);
-            //        }
-            //    }
-            //}
-            //spriteBatch.End();
+                        //spriteBatch.DrawString(hlFont, entity.classname, labelPos + Vector2.One, Color.Black);
+                        spriteBatch.DrawString(hlFont, entity.classname, labelPos, Color.Red);
+                    }
+                }
+            }
+            spriteBatch.End();
 
             if (viewName != null)
             {
                 spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
-                spriteBatch.DrawString(font, viewName, new Vector2(0, GraphicsDevice.Viewport.Height - font.LineSpacing) + Vector2.One, Color.Black);
-                spriteBatch.DrawString(font, viewName, new Vector2(0, GraphicsDevice.Viewport.Height - font.LineSpacing), Color.Red);
+                //spriteBatch.DrawString(hlFont, viewName, new Vector2(0, GraphicsDevice.Viewport.Height - hlFont.LineSpacing) + Vector2.One, Color.Black);
+                spriteBatch.DrawString(hlFont, viewName, new Vector2(0, GraphicsDevice.Viewport.Height - hlFont.LineSpacing), Color.Red);
                 spriteBatch.End();
             }
         }
@@ -1615,7 +1615,7 @@ namespace CopperSource
         {
             //spriteBatch.Begin();
 
-            Rectangle frameTimeRect = new Rectangle(GraphicsDevice.Viewport.Width - 200, timerOffset, 200, font.LineSpacing);
+            Rectangle frameTimeRect = new Rectangle(GraphicsDevice.Viewport.Width - 200, timerOffset, 200, hlFont.LineSpacing);
 
             Color bgColor = new Color(32, 32, 32);
             if (timerOffsetOdd)
@@ -1642,12 +1642,12 @@ namespace CopperSource
             //GraphicsDevice.RasterizerState = scissorRS;
             //spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.None, scissorRS);
             //GraphicsDevice.ScissorRectangle = frameTimeRect;
-            spriteBatch.DrawString(font, label, new Vector2(frameTimeRect.X, frameTimeRect.Y), Color.White);
+            spriteBatch.DrawString(hlFont, label, new Vector2(frameTimeRect.X, frameTimeRect.Y), Color.White);
             //GraphicsDevice.ScissorRectangle = oldScissor;
             //spriteBatch.End();
             //GraphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;
 
-            timerOffset += font.LineSpacing;
+            timerOffset += hlFont.LineSpacing;
             timerOffsetOdd = !timerOffsetOdd;
         }
 
@@ -1705,7 +1705,7 @@ namespace CopperSource
                 RasterizerState.CullCounterClockwise);
 
             KConsole.SetResolution(GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
-            KConsole.Draw(spriteBatch, font, (float)gameTime.ElapsedGameTime.TotalSeconds, (float)gameTime.TotalGameTime.TotalSeconds);
+            KConsole.Draw(spriteBatch, hlFont, (float)gameTime.ElapsedGameTime.TotalSeconds, (float)gameTime.TotalGameTime.TotalSeconds);
 
             DrawDebugLine("Camera position: " + playerPosition.ToString(), Color.White);
 

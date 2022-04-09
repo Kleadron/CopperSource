@@ -265,7 +265,7 @@ namespace CopperSource
             font.colorCount = reader.ReadInt16();
 
             // hope that's right
-            font.colorPalette = ReadColorPalette(reader, font.colorCount);
+            font.colorPalette = ReadColorPalette(reader, 256);
 
             return font;
         }
