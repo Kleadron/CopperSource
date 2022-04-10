@@ -830,6 +830,8 @@ namespace CopperSource
             textures = texList.ToArray();
             texList.Clear();
 
+            Console.WriteLine(textures.Length + " textures loaded");
+
             textureFaceQueues = new Queue<Face>[textures.Length];
 
             for (int i = 0; i < textureFaceQueues.Length; i++)
