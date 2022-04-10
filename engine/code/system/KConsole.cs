@@ -14,7 +14,7 @@ namespace CopperSource
         static int screenHeight;
 
         // light pink seems to give a good readable contrast as nothing in the game will normally be pink
-        static Color color = Color.LightPink;
+        static Color color = Color.White;
 
         const int MAX_HISTORY = 10;
 
@@ -24,6 +24,8 @@ namespace CopperSource
         public static Action<string[]> listeners;
 
         static StringBuilder inputBuffer = new StringBuilder(64);
+
+        const int TEXT_SCALE = 1;
 
         static bool active = false;
         public static bool Active 
@@ -77,7 +79,7 @@ namespace CopperSource
 
         public static void Draw(SpriteBatch sb, HLFont font, float delta, float total)
         {
-            int linePosition = screenHeight - (font.LineSpacing * 2);
+            int linePosition = screenHeight - ((font.LineSpacing * TEXT_SCALE) * 2);
 
             while (logEntries.Count > MAX_HISTORY)
             {
@@ -87,7 +89,7 @@ namespace CopperSource
             for (int i = logEntries.Count - 1; i >= 0; i--)
             {
                 // do not draw non-viewable text
-                if (linePosition > -font.LineSpacing)
+                if (linePosition > -(font.LineSpacing * TEXT_SCALE))
                 {
                     float colorMultiplier = MathHelper.Clamp(logEntries[i].timeLeft, 0, 1);
                     if (active)
@@ -97,10 +99,10 @@ namespace CopperSource
                     if (colorMultiplier > 0f)
                     {
                         //sb.DrawString(font, logEntries[i].text, new Vector2(0, linePosition) + Vector2.One, Color.Black * colorMultiplier);
-                        sb.DrawString(font, logEntries[i].text, new Vector2(0, linePosition), color * colorMultiplier);
+                        sb.DrawString(font, logEntries[i].text, 0, linePosition, color * colorMultiplier, TEXT_SCALE);
                     }
                 }
-                linePosition -= font.LineSpacing;
+                linePosition -= (font.LineSpacing * TEXT_SCALE);
 
                 //if (!active)
                     logEntries[i].timeLeft -= delta;
@@ -124,15 +126,15 @@ namespace CopperSource
             string prompt = beginning + inputBuffer.ToString();
 
             int caretPos = Input.CarotPosition + beginning.Length;
-            float offset = font.MeasureString(prompt.Substring(0, caretPos)).X;
+            int offset = font.MeasureStringPoint(prompt.Substring(0, caretPos)).X * TEXT_SCALE;
 
             //sb.DrawString(font, prompt, new Vector2(0, screenHeight - font.LineSpacing) + Vector2.One, Color.Black);
-            sb.DrawString(font, prompt, new Vector2(0, screenHeight - font.LineSpacing), color);
+            sb.DrawString(font, prompt, 0, screenHeight - (font.LineSpacing * TEXT_SCALE), color, TEXT_SCALE);
 
             if (Input.TimeSinceInputBufferModified % 0.5f < 0.25f)
             {
                 //sb.DrawString(font, cursor, new Vector2(offset, screenHeight - font.LineSpacing) + Vector2.One, Color.Black);
-                sb.DrawString(font, cursor, new Vector2(offset, screenHeight - font.LineSpacing), color);
+                sb.DrawString(font, cursor, offset, screenHeight - (font.LineSpacing * TEXT_SCALE), color, TEXT_SCALE);
             }
         }
 

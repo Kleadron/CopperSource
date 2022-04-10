@@ -121,7 +121,7 @@ namespace CopperSource
 
     public static class SpriteBatchExtensions
     {
-        public static void DrawString(this SpriteBatch spriteBatch, HLFont hlFont, string text, Vector2 position, Color color)
+        public static void DrawString(this SpriteBatch spriteBatch, HLFont hlFont, string text, int x, int y, Color color, int scaler = 1)
         {
             int xOff = 0;
             int yOff = 0;
@@ -131,15 +131,15 @@ namespace CopperSource
                 if (c == '\n')
                 {
                     xOff = 0;
-                    yOff += hlFont.rowHeight;
+                    yOff += hlFont.rowHeight * scaler;
                 }
                 Rectangle srcRect = hlFont.characterRects[c % 256];
-                spriteBatch.Draw(hlFont.texture, new Vector2(position.X + xOff, position.Y + yOff), srcRect, color);
-                xOff += srcRect.Width;
+                spriteBatch.Draw(hlFont.texture, new Rectangle(x + xOff, y + yOff, srcRect.Width * scaler, srcRect.Height * scaler), srcRect, color);
+                xOff += srcRect.Width * scaler;
             }
         }
 
-        public static void DrawString(this SpriteBatch spriteBatch, HLFont hlFont, StringBuilder text, Vector2 position, Color color)
+        public static void DrawString(this SpriteBatch spriteBatch, HLFont hlFont, StringBuilder text, int x, int y, Color color, int scaler = 1)
         {
             int xOff = 0;
             int yOff = 0;
@@ -149,11 +149,11 @@ namespace CopperSource
                 if (c == '\n')
                 {
                     xOff = 0;
-                    yOff += hlFont.rowHeight;
+                    yOff += hlFont.rowHeight * scaler;
                 }
                 Rectangle srcRect = hlFont.characterRects[c % 256];
-                spriteBatch.Draw(hlFont.texture, new Vector2(position.X + xOff, position.Y + yOff), srcRect, color);
-                xOff += srcRect.Width;
+                spriteBatch.Draw(hlFont.texture, new Rectangle(x + xOff, y + yOff, srcRect.Width * scaler, srcRect.Height * scaler), srcRect, color);
+                xOff += srcRect.Width * scaler;
             }
         }
     }

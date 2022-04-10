@@ -46,7 +46,7 @@ namespace CopperSource
         float cameraYawAngle = 0f;
         float cameraPitchAngle = 0f;
 
-        string mapToLoad = KSOFT_DATA_DIRECTORY + "/maps/de_dust2.bsp";
+        string mapToLoad = KSOFT_DATA_DIRECTORY + "/maps/arctica.bsp";
 
         //BspFile mapFile;
         //SpriteFont font;
@@ -149,13 +149,29 @@ namespace CopperSource
 
         Color skyColor = Color.SkyBlue;
 
-        Entity[] entities;
+        const int MAX_ENTITIES = 2048;
+        Entity[] entities = new Entity[MAX_ENTITIES];
 
         Stopwatch updateTimer;
         Stopwatch drawTimer;
 
         TimeSpan lastUpdateTime;
         TimeSpan lastDrawTime;
+
+        string videoDriver = "D3D9";
+
+        // please give me a better way to do this
+        void DriverListener(string msg)
+        {
+#if !XNA
+            if (msg.StartsWith("FNA3D Driver: "))
+            {
+                string[] split = msg.Split(new char[]{' '}, StringSplitOptions.RemoveEmptyEntries);
+                videoDriver = split[split.Length - 1];
+                FNALoggerEXT.LogInfo -= DriverListener;
+            }
+#endif
+        }
 
         public Game1()
         {
@@ -169,6 +185,21 @@ namespace CopperSource
             graphics.PreferMultiSampling = false;
 
             KConsole.SetResolution(res.X, res.Y);
+
+#if !XNA
+            FNALoggerEXT.LogInfo += (msg) => KConsole.Log("[FNA/Info] " + msg);
+            FNALoggerEXT.LogWarn += (msg) => KConsole.Log("[FNA/Warning] " + msg);
+            FNALoggerEXT.LogError += (msg) => KConsole.Log("[FNA/Error] " + msg);
+            FNALoggerEXT.LogInfo += DriverListener;
+#endif
+
+            if (Debugger.IsAttached)
+            {
+                KConsole.Log("Debugger is attached!");
+            }
+#if DEBUG
+            KConsole.Log("Debug build, expect low performance.");
+#endif
 
             Content.RootDirectory = "Content";
             //Content.Dispose();
@@ -207,7 +238,7 @@ namespace CopperSource
             // TODO: Add your initialization logic here
 
             LoadCameraInfo();
-            entities = new Entity[2048];
+            //entities = new Entity[2048];
 
             drawTimer = new Stopwatch();
             updateTimer = new Stopwatch();
@@ -242,9 +273,16 @@ namespace CopperSource
             worldSS.MaxAnisotropy = 16;
             //worldSS.
             //worldSS.
-            
 
-            Window.Title = "CopperSource - " + mapToLoad;
+            string windowTitle = "CopperSource - " + mapToLoad;
+
+            windowTitle += " - " + videoDriver;
+            if (System.Diagnostics.Debugger.IsAttached)
+            {
+                windowTitle += " - DEBUGGING";
+            }
+
+            Window.Title = windowTitle;
 
             base.Initialize();
         }
@@ -575,9 +613,9 @@ namespace CopperSource
             worldEffect.TextureEnabled = true;
             grid = worldEffect.Texture = LoadImage("tiledark_s");
 
-            WadFile fontWad = new WadFile(KSOFT_DATA_DIRECTORY + "/gfx.wad"); // gfx.wad
+            WadFile fontWad = new WadFile(KSOFT_DATA_DIRECTORY + "/fonts.wad"); // gfx.wad / fonts.wad
             WadFile.Font fontData;
-            fontWad.TryReadFont("CONCHARS", out fontData); // CONCHARS
+            fontWad.TryReadFont("FONT2", out fontData); // CONCHARS / FONT2
             hlFont = new HLFont(GraphicsDevice, fontData);
             fontWad.Close();
 
@@ -905,7 +943,7 @@ namespace CopperSource
             {
                 string texName = miptex.name;
 
-                if (texName[0] == '-')
+                if (texName.Length > 0 && texName[0] == '-')
                 {
                     texName = miptex.name.Substring(2);
                 }
@@ -1609,7 +1647,7 @@ namespace CopperSource
             {
                 spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
                 //spriteBatch.DrawString(hlFont, viewName, new Vector2(0, GraphicsDevice.Viewport.Height - hlFont.LineSpacing) + Vector2.One, Color.Black);
-                spriteBatch.DrawString(hlFont, viewName, new Vector2(0, GraphicsDevice.Viewport.Height - hlFont.LineSpacing), Color.Red);
+                spriteBatch.DrawString(hlFont, viewName, 0, GraphicsDevice.Viewport.Height - hlFont.LineSpacing, Color.Red);
                 spriteBatch.End();
             }
         }
@@ -1620,13 +1658,13 @@ namespace CopperSource
         void DrawDebugLine(string s, Color color)
         {
             //spriteBatch.DrawString(font, s, new Vector2(0, debugLineOffset) + Vector2.One, Color.Black);
-            spriteBatch.DrawString(hlFont, s, new Vector2(0, debugLineOffset), color);
+            spriteBatch.DrawString(hlFont, s, 0, debugLineOffset, color);
             debugLineOffset += hlFont.LineSpacing;
         }
         void DrawDebugLine(StringBuilder s, Color color)
         {
             //spriteBatch.DrawString(font, s, new Vector2(0, debugLineOffset) + Vector2.One, Color.Black);
-            spriteBatch.DrawString(hlFont, s, new Vector2(0, debugLineOffset), color);
+            spriteBatch.DrawString(hlFont, s, 0, debugLineOffset, color);
             debugLineOffset += hlFont.LineSpacing;
         }
 
@@ -1663,7 +1701,7 @@ namespace CopperSource
             //GraphicsDevice.RasterizerState = scissorRS;
             //spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, DepthStencilState.None, scissorRS);
             //GraphicsDevice.ScissorRectangle = frameTimeRect;
-            spriteBatch.DrawString(hlFont, label, new Vector2(frameTimeRect.X, frameTimeRect.Y), Color.White);
+            spriteBatch.DrawString(hlFont, label, frameTimeRect.X, frameTimeRect.Y, Color.White);
             //GraphicsDevice.ScissorRectangle = oldScissor;
             //spriteBatch.End();
             //GraphicsDevice.RasterizerState = RasterizerState.CullCounterClockwise;

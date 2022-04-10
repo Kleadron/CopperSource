@@ -13,9 +13,9 @@ namespace CopperSource
         const int MAXTEXTURENAME = 16;
         const int MIPLEVELS = 4;
 
-        const byte TYPE_QPIC = 0x42;
-        const byte TYPE_MIPTEX = 0x43;
-        const byte TYPE_FONT = 0x46;
+        const byte TYPE_QPIC = 0x42;    //66
+        const byte TYPE_MIPTEX = 0x43;  //67
+        const byte TYPE_FONT = 0x46;    //70
 
         struct Header
         {
