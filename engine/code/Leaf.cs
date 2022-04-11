@@ -9,6 +9,7 @@ namespace CopperSource
     public class Leaf
     {
         public int id;
+        public int modelID;
         public Node parentNode;
         public BoundingBox bb;
         public int firstMarkSurface, nMarkSurfaces;

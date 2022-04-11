@@ -10,7 +10,7 @@
 
 DECLARE_TEXTURE(TexDiffuse, 0);
 DECLARE_TEXTURE(TexLightmap, 1);
-//DECLARE_TEXTURE(TexDetail, 2);
+DECLARE_TEXTURE(TexDetail, 2);
 
 
 BEGIN_CONSTANTS
@@ -19,11 +19,11 @@ BEGIN_CONSTANTS
     float3 FogColor         _ps(c0) _cb(c1);
     float4 FogVector        _vs(c5) _cb(c2);
 
-	//float2 DetailScale;
+	float2 DetailScale;
 
 	float  Gamma = 2.2f;
 	float Brightness = 0.91f;
-	//float AlphaCutoff = 0.5f;
+	float AlphaCutoff = 0.5f;
 
 MATRIX_CONSTANTS
 
@@ -114,36 +114,7 @@ VSOutputTx2NoFog VSDualTextureVcNoFog(VSInputTx2Vc vin)
 
 
 // Pixel shader: basic.
-float4 PSColor(PSInputTx2 pin) : SV_Target0
-{
-    float4 color = SAMPLE_TEXTURE(TexDiffuse, pin.TexCoord);
-
-    color.rgb = GammaFunc(color.rgb);
-    color *= pin.Diffuse;
-	color.a = 1;
-    
-    ApplyFog(color, pin.Specular.w);
-    
-    return color;
-}
-
-
-// Pixel shader: no fog.
-float4 PSColorNoFog(PSInputTx2NoFog pin) : SV_Target0
-{
-    float4 color = SAMPLE_TEXTURE(TexDiffuse, pin.TexCoord);
-	//if (color.a <= AlphaCutoff)
-	//	discard;
-
-	color.rgb = GammaFunc(color.rgb);
-    color *= pin.Diffuse;
-	color.a = 1;
-    
-    return color;
-}
-
-// Pixel shader: basic.
-float4 PSLightmapped(PSInputTx2 pin) : SV_Target0
+float4 PSDualTexture(PSInputTx2 pin) : SV_Target0
 {
     float4 color = SAMPLE_TEXTURE(TexDiffuse, pin.TexCoord);
 	//if (color.a <= AlphaCutoff)
@@ -162,7 +133,7 @@ float4 PSLightmapped(PSInputTx2 pin) : SV_Target0
 
 
 // Pixel shader: no fog.
-float4 PSLightmappedNoFog(PSInputTx2NoFog pin) : SV_Target0
+float4 PSDualTextureNoFog(PSInputTx2NoFog pin) : SV_Target0
 {
     float4 color = SAMPLE_TEXTURE(TexDiffuse, pin.TexCoord);
 	//if (color.a <= AlphaCutoff)
@@ -176,6 +147,51 @@ float4 PSLightmappedNoFog(PSInputTx2NoFog pin) : SV_Target0
     
     return color;
 }
+
+
+
+// Pixel shader: basic, with detail
+float4 PSDualTextureDetail(PSInputTx2 pin) : SV_Target0
+{
+    float4 color = SAMPLE_TEXTURE(TexDiffuse, pin.TexCoord);
+	//if (color.a <= AlphaCutoff)
+	//	discard;
+
+    float4 light = SAMPLE_TEXTURE(TexLightmap, pin.TexCoord2);
+	float4 detail = SAMPLE_TEXTURE(TexDetail, pin.TexCoord * DetailScale);
+
+    color.rgb = GammaFunc(color.rgb);
+	color *= 2;
+	color *= detail;
+    color *= light * pin.Diffuse;
+	color.a = 1;
+    
+    ApplyFog(color, pin.Specular.w);
+    
+    return color;
+}
+
+
+// Pixel shader: no fog, with detail
+float4 PSDualTextureDetailNoFog(PSInputTx2NoFog pin) : SV_Target0
+{
+    float4 color = SAMPLE_TEXTURE(TexDiffuse, pin.TexCoord);
+	//if (color.a <= AlphaCutoff)
+	//	discard;
+
+    float4 light = SAMPLE_TEXTURE(TexLightmap, pin.TexCoord2);
+	float4 detail = SAMPLE_TEXTURE(TexDetail, pin.TexCoord * DetailScale);
+
+	color.rgb = GammaFunc(color.rgb);
+	color *= 2;
+	color *= detail;
+    color *= light * pin.Diffuse;
+	color.a = 1;
+    
+    return color;
+}
+
+
 
 
 VertexShader VSArray[8] =
@@ -193,10 +209,10 @@ VertexShader VSArray[8] =
 
 PixelShader PSArray[4] =
 {
-    compile ps_2_0 PSColor(),
-    compile ps_2_0 PSColorNoFog(),
-	compile ps_2_0 PSLightmapped(),
-    compile ps_2_0 PSLightmappedNoFog(),
+    compile ps_2_0 PSDualTexture(),
+    compile ps_2_0 PSDualTextureNoFog(),
+	compile ps_2_0 PSDualTextureDetail(),
+    compile ps_2_0 PSDualTextureDetailNoFog(),
 };
 
 

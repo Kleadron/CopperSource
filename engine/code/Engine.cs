@@ -19,7 +19,7 @@ namespace CopperSource
     /// <summary>
     /// This is the main type for your game
     /// </summary>
-    public class Game1 : Game
+    public class Engine : Game
     {
         GraphicsDeviceManager graphics;
         SpriteBatch spriteBatch;
@@ -29,6 +29,33 @@ namespace CopperSource
 
         public Vector3 playerPosition = new Vector3(0, 0, 0);
         public Vector3 visPosition;
+
+        BoundingBox visBox;
+        void CalcVisBox()
+        {
+            visBox = new BoundingBox(Vector3.One * short.MaxValue, Vector3.One * short.MinValue);
+            for (int i = 0; i < leaves.Length; i++)
+            {
+                if (leafVisList[i] && leaves[i] != null && leaves[i].modelID == 0)
+                {
+                    BoundingBox leafBox = leaves[i].bb;
+
+                    if (leafBox.Min.X < visBox.Min.X)
+                        visBox.Min.X = leafBox.Min.X;
+                    if (leafBox.Min.Y < visBox.Min.Y)
+                        visBox.Min.Y = leafBox.Min.Y;
+                    if (leafBox.Min.Z < visBox.Min.Z)
+                        visBox.Min.Z = leafBox.Min.Z;
+
+                    if (leafBox.Max.X > visBox.Max.X)
+                        visBox.Max.X = leafBox.Max.X;
+                    if (leafBox.Max.Y > visBox.Max.Y)
+                        visBox.Max.Y = leafBox.Max.Y;
+                    if (leafBox.Max.Z > visBox.Max.Z)
+                        visBox.Max.Z = leafBox.Max.Z;
+                }
+            }
+        }
 
         const string KSOFT_DATA_DIRECTORY = "ksoft";
 
@@ -46,7 +73,7 @@ namespace CopperSource
         float cameraYawAngle = 0f;
         float cameraPitchAngle = 0f;
 
-        string mapToLoad = KSOFT_DATA_DIRECTORY + "/maps/arctica.bsp";
+        string mapToLoad = KSOFT_DATA_DIRECTORY + "/maps/de_aztec.bsp";
 
         //BspFile mapFile;
         //SpriteFont font;
@@ -68,9 +95,12 @@ namespace CopperSource
         Dictionary<string, List<int>> textureNameToID = new Dictionary<string,List<int>>();
         Texture2D[] textures;
         List<Texture2D> texList = new List<Texture2D>();
-        Texture2D[] lightmapTextures;
-        List<Texture2D> lightmapList = new List<Texture2D>();
+        //Texture2D[] lightmapTextures;
+        //List<Texture2D> lightmapList = new List<Texture2D>();
         int nextTexIndex = 1;
+
+        LightmapAtlas lightmapAtlas;
+        List<LMTexEntry> lightmapList = new List<LMTexEntry>();
 
         Queue<Face>[] textureFaceQueues;
         int[] indices;
@@ -173,7 +203,7 @@ namespace CopperSource
 #endif
         }
 
-        public Game1()
+        public Engine()
         {
             //Vector3 v = DataHelper.ValueToVector3("3.0 4.1 333");
 
@@ -193,13 +223,15 @@ namespace CopperSource
             FNALoggerEXT.LogInfo += DriverListener;
 #endif
 
+#if DEBUG
+            KConsole.Log("DEBUG BUILD! Performance will be sub-optimal.");
+#endif
             if (Debugger.IsAttached)
             {
                 KConsole.Log("Debugger is attached!");
             }
-#if DEBUG
-            KConsole.Log("Debug build, expect low performance.");
-#endif
+
+            KConsole.listeners += Cmd_LightmapSave;
 
             Content.RootDirectory = "Content";
             //Content.Dispose();
@@ -209,9 +241,21 @@ namespace CopperSource
 
             //TargetElapsedTime = TimeSpan.FromSeconds(1d / 30d);
 
-            bool capFramerate = true;
+            bool capFramerate = false;
             IsFixedTimeStep = capFramerate;
             graphics.SynchronizeWithVerticalRetrace = capFramerate;
+        }
+
+        void Cmd_LightmapSave(string[] args)
+        {
+            if (args.Length >= 1)
+            {
+                if (args[0] == "lightmap_save")
+                {
+                    lightmapAtlas.texture.SaveAsPng(File.Open("lightmap.png", FileMode.Create), lightmapAtlas.atlasSize, lightmapAtlas.atlasSize);
+                    KConsole.Log("Saved lightmap as \"lightmap.png\"");
+                }
+            }
         }
 
         T GetEntityByType<T>() where T : Entity
@@ -328,41 +372,50 @@ namespace CopperSource
             s.Close();
         }
 
-        int CreateLightmapTexture(byte[] lightmapData, int offset, int width, int height)
+        int CreateLightmapTexture(int offset, int width, int height)
         {
             //Console.WriteLine(width + "x" + height);
             
             int texIndex = lightmapList.Count;
-            Texture2D tex = new Texture2D(GraphicsDevice, width, height, false, SurfaceFormat.Color);
-            lightmapList.Add(tex);
 
-            Color[] colors = new Color[width * height];
-            byte[] lmData = lightmapData;
+            LMTexEntry lmtex = new LMTexEntry();
+            lmtex.id = texIndex;
+            lmtex.offset = offset;
+            lmtex.width = width;
+            lmtex.height = height;
+            lightmapList.Add(lmtex);
 
-            for (int y = 0; y < height; y++)
-            {
-                for (int x = 0; x < width; x++)
-                {
-                    int dataIndex = (x + (y * width)) * 3;
-                    int colorIndex = (x + (y * width));
-                    Color c = Color.White;
-                    c.R = lmData[offset + dataIndex];
-                    c.G = lmData[offset + dataIndex + 1];
-                    c.B = lmData[offset + dataIndex + 2];
+            //Texture2D tex = new Texture2D(GraphicsDevice, width, height, false, SurfaceFormat.Color);
+            //lightmapList.Add(tex);
 
-                    colors[colorIndex] = c;
-                }
-            }
+            //Color[] colors = new Color[width * height];
+            //byte[] lmData = lightmapData;
 
-            tex.SetData(colors);
+            //for (int y = 0; y < height; y++)
+            //{
+            //    for (int x = 0; x < width; x++)
+            //    {
+            //        int dataIndex = (x + (y * width)) * 3;
+            //        int colorIndex = (x + (y * width));
+            //        Color c = Color.White;
+            //        c.R = lmData[offset + dataIndex];
+            //        c.G = lmData[offset + dataIndex + 1];
+            //        c.B = lmData[offset + dataIndex + 2];
+
+            //        colors[colorIndex] = c;
+            //    }
+            //}
+
+            //tex.SetData(colors);
 
             return texIndex;
         }
 
-        Node BuildNode(BspFile mapData, int index, Node parent)
+        Node BuildNode(BspFile mapData, int index, Node parent, int modelID)
         {
             Node node = new Node();
             node.id = index;
+            node.modelID = modelID;
             node.parentNode = parent;
             nodes[index] = node;
 
@@ -381,11 +434,11 @@ namespace CopperSource
             if (frontChild <= 0)
             {
                 frontChild = (short)~frontChild;
-                node.frontLeaf = BuildLeaf(mapData, frontChild, node);
+                node.frontLeaf = BuildLeaf(mapData, frontChild, node, modelID);
             }
             else
             {
-                node.frontNode = BuildNode(mapData, frontChild, node);
+                node.frontNode = BuildNode(mapData, frontChild, node, modelID);
             }
 
             short backChild = mapNode.backChild;
@@ -393,20 +446,21 @@ namespace CopperSource
             if (backChild <= 0)
             {
                 backChild = (short)~backChild;
-                node.backLeaf = BuildLeaf(mapData, backChild, node);
+                node.backLeaf = BuildLeaf(mapData, backChild, node, modelID);
             }
             else
             {
-                node.backNode = BuildNode(mapData, backChild, node);
+                node.backNode = BuildNode(mapData, backChild, node, modelID);
             }
 
             return node;
         }
 
-        Leaf BuildLeaf(BspFile mapData, int index, Node parent)
+        Leaf BuildLeaf(BspFile mapData, int index, Node parent, int modelID)
         {
             Leaf leaf = new Leaf();
             leaf.id = index;
+            leaf.modelID = modelID;
             leaf.parentNode = parent;
             leaves[index] = leaf;
             BspFile.Leaf mapLeaf = mapData.leaves[index];
@@ -433,6 +487,97 @@ namespace CopperSource
             return leafVisList[leaf.id];
         }
 
+        public bool BBIsVisible(ref BoundingBox bb)
+        {
+            // first check, inaccurate but is a rough idea what should be visible
+            ContainmentType ct;
+            visBox.Contains(ref bb, out ct);
+            if (ct == ContainmentType.Disjoint)
+            {
+                return false;
+            }
+
+            // second check, frustum cull
+            viewFrustum.Contains(ref bb, out ct);
+            if (ct == ContainmentType.Disjoint)
+            {
+                return false;
+            }
+
+            // more accurate but slow as hell
+            //int visibleIntersections = 0;
+            //for (int i = 0; i < leaves.Length; i++)
+            //{
+            //    Leaf leaf = leaves[i];
+            //    if (leafVisList[i] && leaf != null && leaf.modelID == 0)
+            //    {
+            //        leaf.bb.Contains(ref bb, out ct);
+            //        if (ct == ContainmentType.Contains || ct == ContainmentType.Intersects)
+            //        {
+            //            visibleIntersections++;
+            //        }
+            //    }
+            //}
+
+            //if (visibleIntersections == 0)
+            //    return false;
+
+            // v3
+            //return RecursiveBoxVisCheck(rootNode, ref bb);
+
+            return true;
+        }
+
+        // checks a bounding box agains the BSP tree to see if the bounding box is visible.
+        // this method will check both sides of a node if the bounding box intersects it.
+        // It should return true if one of the leaves encountered are visible but the leaves are never visible??
+        bool RecursiveBoxVisCheck(Node node, ref BoundingBox bb)
+        {
+            PlaneIntersectionType it;
+            node.plane.Intersects(ref bb, out it);
+
+            // front side check
+            if (it == PlaneIntersectionType.Front || it == PlaneIntersectionType.Intersecting)
+            {
+                if (node.frontNode != null)
+                {
+                    // return true if the recursive check succeeded, otherwise continue
+                    bool recursiveCheck = RecursiveBoxVisCheck(node.frontNode, ref bb);
+                    if (recursiveCheck)
+                        return true;
+                }
+                else
+                {
+                    bool leafIsVisible = leafVisList[node.frontLeaf.id];
+                    if (leafIsVisible)
+                    {
+                        return true;
+                    }
+                }
+            }
+            // back side check
+            if (it == PlaneIntersectionType.Back || it == PlaneIntersectionType.Intersecting)
+            {
+                if (node.backNode != null)
+                {
+                    // return true if the recursive check succeeded, otherwise continue
+                    bool recursiveCheck = RecursiveBoxVisCheck(node.backNode, ref bb);
+                    if (recursiveCheck)
+                        return true;
+                }
+                else
+                {
+                    bool leafIsVisible = leafVisList[node.backLeaf.id];
+                    if (leafIsVisible)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
+        }
+
         public Leaf GetLeafFromPosition(Vector3 pos)
         {
             Node searchNode = rootNode;
@@ -440,6 +585,7 @@ namespace CopperSource
             {
                 float dot;
                 Vector3.Dot(ref searchNode.plane.Normal, ref pos, out dot);
+                //searchNode.plane.DotCoordinate(ref pos, out dot);
                 // is the position in front or behind of the plane
                 if (dot > searchNode.plane.D)
                 {
@@ -710,9 +856,12 @@ namespace CopperSource
 
             lightmapWorldEffect = new LightmapEffect(GraphicsDevice, File.ReadAllBytes(KSOFT_DATA_DIRECTORY + "/effects/LightmapEffect" + effectExtension));
 
+            lightmapWorldEffect.Gamma = 2.2f;
             //lightmapWorldEffect.DetailTextureEnabled = true;
-            lightmapWorldEffect.DetailScale = new Vector2(3, 3);
+            //lightmapWorldEffect.DetailScale = new Vector2(3, 3);
             //detailTex = lightmapWorldEffect.DetailTexture = Content.Load<Texture2D>("Textures/ai_detail");
+
+            //lightmapWorldEffect.LightmapEnabled = false;
 
             lightmapWorldEffect.FogEnabled = true;
             lightmapWorldEffect.FogStart = fogStart;
@@ -841,6 +990,8 @@ namespace CopperSource
                 BspFile.MapModel model = mapFile.models[mI];
                 BspModel mdl = new BspModel();
 
+                mdl.id = mI;
+
                 mdl.firstFace = model.firstFace;
                 mdl.numFaces = model.nFaces;
                 mdl.numLeaves = model.visleafs;
@@ -854,17 +1005,26 @@ namespace CopperSource
                     // THIS IS THE END OF A FACE GENERATION LOOP. DO NOT PUT STUFF HERE.
                 }
 
-                mdl.rootNode = BuildNode(mapFile, model.node1, null);
+                mdl.rootNode = BuildNode(mapFile, model.node1, null, mI);
                 //Console.WriteLine("Generated BSP for model " + mI);
                 models[mI] = mdl;
             }
 
             Console.WriteLine("Models generated: " + mapFile.models.Length);
 
-            rootNode = nodes[0];
+            rootNode = models[0].rootNode;
 
-            lightmapTextures = lightmapList.ToArray();
+            //lightmapTextures = lightmapList.ToArray();
+            lightmapAtlas = new LightmapAtlas(GraphicsDevice, lightmapList, mapFile.lightmapData);
             lightmapList.Clear();
+
+            // adjust lightmap uvs for lightmap atlas
+            for (int i = 0; i < mapFaces.Length; i++)
+            {
+                Face face = mapFaces[i];
+                CalcFaceLightmapUVs(face);
+            }
+
             textures = texList.ToArray();
             texList.Clear();
 
@@ -879,7 +1039,7 @@ namespace CopperSource
 
             textureGroupQueue = new Queue<RenderGroup>();
 
-            Console.WriteLine(lightmapTextures.Length + " generated lightmap textures");
+            //Console.WriteLine(lightmapTextures.Length + " generated lightmap textures");
             Console.WriteLine(vertList.Count + " generated vertices");
             Console.WriteLine(indexList.Count + " generated indices");
             Console.WriteLine(mapFaces.Length + " generated faces");
@@ -910,11 +1070,65 @@ namespace CopperSource
             }
 
             GC.Collect();
+
+            KConsole.Log("Loaded map " + mapToLoad);
         }
 
         List<Vector3> f_points = new List<Vector3>();
         List<Vector2> f_uvs = new List<Vector2>();
         List<Vector2> f_luvs = new List<Vector2>();
+
+        Vector2 ScaleUV0To1(Vector2 uv, Vector2 min, Vector2 max)
+        {
+            Vector2 difference = max - min;
+            uv = (uv - min) / difference;
+            return uv;
+        }
+
+        void CalcFaceLightmapUVs(Face face)
+        {
+            if (face.lightmapID != -1)
+            {
+                Vector2 minUV = new Vector2(float.PositiveInfinity, float.PositiveInfinity);
+                Vector2 maxUV = new Vector2(float.NegativeInfinity, float.NegativeInfinity);
+
+                for (int j = 0; j < face.numVerts; j++)
+                {
+                    int vertexIndex = face.baseVertex + j;
+                    WorldVertex vertex = vertList[vertexIndex];
+                    Vector2 uv = vertex.LightmapCoordinate;
+
+                    if (uv.X < minUV.X)
+                        minUV.X = uv.X;
+                    if (uv.Y < minUV.Y)
+                        minUV.Y = uv.Y;
+
+                    if (uv.X > maxUV.X)
+                        maxUV.X = uv.X;
+                    if (uv.Y > maxUV.Y)
+                        maxUV.Y = uv.Y;
+                }
+
+                //Vector2 properMinUV = new Vector2();
+                //properMinUV.X = (int)(minUV.X / 8f) * 8f;
+                //properMinUV.Y = (int)(minUV.Y / 8f) * 8f;
+
+                for (int j = 0; j < face.numVerts; j++)
+                {
+                    int vertexIndex = face.baseVertex + j;
+                    WorldVertex vertex = vertList[vertexIndex];
+                    Vector2 luv = vertex.LightmapCoordinate;
+                    //
+                    luv -= minUV;
+                    //vertex.LightmapCoordinate -= properMinUV;
+                    luv /= new Vector2(lightmapAtlas.atlasSize * 16, lightmapAtlas.atlasSize * 16);
+                    luv += lightmapAtlas.uvs[face.lightmapID].min;
+
+                    vertex.LightmapCoordinate = luv;
+                    vertList[vertexIndex] = vertex;
+                }
+            }
+        }
 
         void BuildFace(BspFile mapFile, int i)
         {
@@ -1022,8 +1236,8 @@ namespace CopperSource
             int lightmapTexIndex = -1;
             if (mapFile.lightmapData != null)
             {
-                //if (face.lightmapOffset != -1)
-                //    lightmapTexIndex = CreateLightmapTexture(mapFile.lightmapData, face.lightmapOffset, lightMapWidth, lightMapHeight);
+                if (face.lightmapOffset != -1)
+                    lightmapTexIndex = CreateLightmapTexture(face.lightmapOffset, lightMapWidth, lightMapHeight);
             }
             mf.lightmapID = lightmapTexIndex;
 
@@ -1036,21 +1250,22 @@ namespace CopperSource
             for (int j = 0; j < f_uvs.Count; j++)
             {
                 //Vector2 lmUV = (f_luvs[j] - minUV) / uvDim;
-                Vector2 lmUV = f_luvs[j];
+                //Vector2 lmUV = f_luvs[j];
 
-                lmUV -= minUV;
+                //lmUV -= minUV;
 
-                // some half-offset
-                lmUV += new Vector2(8);
-                // use the lightmap atlas size instead when that is added
-                lmUV /= new Vector2(lightMapWidth * 16, lightMapHeight * 16);
+                //// some half-offset
+                ////lmUV += new Vector2(8);
+                //// use the lightmap atlas size instead when that is added
+                ////lmUV /= new Vector2(lightMapWidth * 16, lightMapHeight * 16);
+                ////lmUV /= new Vector2(LightmapAtlas.PAGE_WIDTH * 16, LightmapAtlas.PAGE_HEIGHT * 16);
 
-                f_luvs[j] = lmUV;
+                //f_luvs[j] = lmUV;
                 f_uvs[j] = new Vector2(f_uvs[j].X / texWidth, f_uvs[j].Y / texHeight);
             }
 
             mf.start = mf.indicesStart = indexList.Count;
-            //mf.baseVertex = vertList.Count;
+            mf.baseVertex = vertList.Count;
             int baseIndex = vertList.Count;
 
             // create vertices
@@ -1083,10 +1298,10 @@ namespace CopperSource
         protected override void UnloadContent()
         {
             // TODO: Unload any non ContentManager content here
-            for (int i = 0; i < lightmapTextures.Length; i++)
-            {
-                lightmapTextures[i].Dispose();
-            }
+            //for (int i = 0; i < lightmapTextures.Length; i++)
+            //{
+            //    lightmapTextures[i].Dispose();
+            //}
 
             vb.Dispose();
             //ib.Dispose();
@@ -1249,36 +1464,36 @@ namespace CopperSource
 
         }
 
-        void DrawFace(Face face)
-        {
-            if (face.type == FaceType.DontDraw)
-                return;
+        //void DrawFace(Face face)
+        //{
+        //    if (face.type == FaceType.DontDraw)
+        //        return;
 
-            if (defaultLighting || face.lightmapID == -1)
-            {
-                if (lastDrawnTexID != face.textureID)
-                {
-                    worldEffect.Texture = textures[face.textureID];
-                    lastDrawnTexID = face.textureID;
-                }
-                defaultPass.Apply();
-            }
-            else
-            {
-                if (lastDrawnTexID != face.textureID)
-                {
-                    //lightmapTex1.SetValue(textures[face.textureID]);
-                    lightmapWorldEffect.DiffuseTexture = textures[face.textureID];
-                    lastDrawnTexID = face.textureID;
-                }
-                //lightmapTex2.SetValue(lightmapTextures[face.lightmapID]);
-                lightmapWorldEffect.LightmapTexture = lightmapTextures[face.lightmapID];
-                lightmapPass.Apply();
-            }
+        //    if (defaultLighting || face.lightmapID == -1)
+        //    {
+        //        if (lastDrawnTexID != face.textureID)
+        //        {
+        //            worldEffect.Texture = textures[face.textureID];
+        //            lastDrawnTexID = face.textureID;
+        //        }
+        //        defaultPass.Apply();
+        //    }
+        //    else
+        //    {
+        //        if (lastDrawnTexID != face.textureID)
+        //        {
+        //            //lightmapTex1.SetValue(textures[face.textureID]);
+        //            lightmapWorldEffect.DiffuseTexture = textures[face.textureID];
+        //            lastDrawnTexID = face.textureID;
+        //        }
+        //        //lightmapTex2.SetValue(lightmapTextures[face.lightmapID]);
+        //        lightmapWorldEffect.LightmapTexture = lightmapTextures[face.lightmapID];
+        //        lightmapPass.Apply();
+        //    }
 
-            GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, face.baseVertex, face.start, face.numVerts, face.start, face.triCount);
-            drawnFaces++;
-        }
+        //    GraphicsDevice.DrawIndexedPrimitives(PrimitiveType.TriangleList, face.baseVertex, face.start, face.numVerts, face.start, face.triCount);
+        //    drawnFaces++;
+        //}
 
         int drawnLeaves = 0;
         int drawnFaces = 0;
@@ -1321,24 +1536,24 @@ namespace CopperSource
             {
                 if (node.frontNode != null)
                     RecursiveTreeDraw(node.frontNode, pos, vislist);
-                else if (node.frontLeaf != null && vislist[node.frontLeaf.id])
+                else if (vislist[node.frontLeaf.id])
                     DrawLeaf(node.frontLeaf);
 
                 if (node.backNode != null)
                     RecursiveTreeDraw(node.backNode, pos, vislist);
-                else if (node.backLeaf != null && vislist[node.backLeaf.id])
+                else if (vislist[node.backLeaf.id])
                     DrawLeaf(node.backLeaf);
             }
             else // behind
             {
                 if (node.backNode != null)
                     RecursiveTreeDraw(node.backNode, pos, vislist);
-                else if (node.backLeaf != null && vislist[node.backLeaf.id])
+                else if (vislist[node.backLeaf.id])
                     DrawLeaf(node.backLeaf);
 
                 if (node.frontNode != null)
                     RecursiveTreeDraw(node.frontNode, pos, vislist);
-                else if (node.frontLeaf != null && vislist[node.frontLeaf.id])
+                else if (vislist[node.frontLeaf.id])
                     DrawLeaf(node.frontLeaf);
             }
         }
@@ -1365,24 +1580,24 @@ namespace CopperSource
             {
                 if (node.frontNode != null)
                     RecursiveTreeDraw(node.frontNode, pos);
-                else if (node.frontLeaf != null)
+                else
                     DrawLeaf(node.frontLeaf);
 
                 if (node.backNode != null)
                     RecursiveTreeDraw(node.backNode, pos);
-                else if (node.backLeaf != null)
+                else
                     DrawLeaf(node.backLeaf);
             }
             else // behind
             {
                 if (node.backNode != null)
                     RecursiveTreeDraw(node.backNode, pos);
-                else if (node.backLeaf != null)
+                else
                     DrawLeaf(node.backLeaf);
 
                 if (node.frontNode != null)
                     RecursiveTreeDraw(node.frontNode, pos);
-                else if (node.frontLeaf != null)
+                else
                     DrawLeaf(node.frontLeaf);
             }
         }
@@ -1454,6 +1669,8 @@ namespace CopperSource
                 //GraphicsDevice.BlendState = BlendState.Opaque;
                 //GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
+                Texture2D texture = textures[group.texture];
+
                 // set up the appropriate effects
                 if (overdrawView)
                 {
@@ -1463,15 +1680,15 @@ namespace CopperSource
                 else if (defaultLighting)
                 {
                     worldEffect.World = transform;
-                    worldEffect.Texture = textures[group.texture];
+                    worldEffect.Texture = texture;
                     defaultPass.Apply();
                 }
                 else
                 {
                     lightmapWorldEffect.World = transform;
-                    lightmapWorldEffect.DiffuseTexture = textures[group.texture];
-                    lightmapWorldEffect.DetailTextureEnabled = false;
-                    lightmapWorldEffect.LightmapTexture = graypixel;
+                    lightmapWorldEffect.DiffuseTexture = texture;
+                    lightmapWorldEffect.LightmapEnabled = true;
+                    lightmapWorldEffect.LightmapTexture = lightmapAtlas.texture;
                     lightmapPass.Apply();
                 }
 
@@ -1550,7 +1767,7 @@ namespace CopperSource
 
             // diffuse texture and detail texture
             GraphicsDevice.SamplerStates[0] = worldSS; // AnisotropicWrap
-            GraphicsDevice.SamplerStates[2] = worldSS;
+            //GraphicsDevice.SamplerStates[2] = worldSS;
 
             // lightmap texture
             //GraphicsDevice.SamplerStates[1] = SamplerState.PointWrap;
@@ -1567,7 +1784,7 @@ namespace CopperSource
 
             projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(fov), GraphicsDevice.Viewport.AspectRatio, 1f, cameraClipDistance);
 
-            viewFrustum = new BoundingFrustum(view * projection);
+            //viewFrustum = new BoundingFrustum(view * projection);
 
             worldEffect.View = view;
             worldEffect.Projection = projection;
@@ -1583,24 +1800,11 @@ namespace CopperSource
 
             if (!freezeVisibility)
             {
+                viewFrustum = new BoundingFrustum(view * projection);
                 visPosition = playerPosition;
                 cameraLeaf = GetLeafFromPosition(visPosition);
                 UpdateVisiblityFromLeaf(cameraLeaf);
-
-                // do frustum check on visible leaves -- THIS SLOWS DOWN THE RENDERING MORE THAN IT HELPS :(
-                //for (int i = 0; i < leaves.Length; i++)
-                //{
-                //    Leaf leaf = leaves[i];
-                //    if (leafVisList[i] && leaf != null)
-                //    {
-                //        ContainmentType contain = viewFrustum.Contains(leaf.bb);
-                //        leafVisList[i] = contain == ContainmentType.Contains || contain == ContainmentType.Intersects;
-                //    }
-                //    else
-                //    {
-                //        leafVisList[i] = false;
-                //    }
-                //}
+                CalcVisBox();
             }
 
             // ======================== DRAW DRAW DRAW DRAW
@@ -1768,7 +1972,7 @@ namespace CopperSource
 
             DrawDebugLine("Camera position: " + playerPosition.ToString(), Color.White);
 
-            string visString = "Leaf/PVS: " + cameraLeaf.id.ToString() + "/" + cameraLeaf.visCluster;
+            string visString = "Leaf/Custer: " + cameraLeaf.id.ToString() + "/" + cameraLeaf.visCluster;
             if (freezeVisibility)
                 visString += " (VIS FROZEN)";
             DrawDebugLine(visString, Color.White);

@@ -10,7 +10,7 @@ namespace CopperSource
         /// </summary>
         static void Main(string[] args)
         {
-            using (Game1 game = new Game1())
+            using (Engine game = new Engine())
             {
                 game.Run();
             }

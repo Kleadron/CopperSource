@@ -9,6 +9,7 @@ namespace CopperSource
     public class Node
     {
         public int id;
+        public int modelID;
         public Node parentNode;
         public Node frontNode, backNode;
         public Leaf frontLeaf, backLeaf;

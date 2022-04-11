@@ -13,7 +13,7 @@ namespace CopperSource.Objects
         public string classname;
         public Vector3 position;
         public Quaternion rotation;
-        protected Game1 game;
+        protected Engine engine;
 
         public Vector3 originOffset;
         public Vector3 WorldOrigin
@@ -28,7 +28,7 @@ namespace CopperSource.Objects
         {
             get
             {
-                return game.PointIsVisible(WorldOrigin);
+                return engine.PointIsVisible(WorldOrigin);
             }
         }
 
@@ -36,13 +36,13 @@ namespace CopperSource.Objects
         {
             get
             {
-                return game.GetLeafFromPosition(WorldOrigin).id != 0;
+                return engine.GetLeafFromPosition(WorldOrigin).id != 0;
             }
         }
 
-        public Entity(Game1 game)
+        public Entity(Engine engine)
         {
-            this.game = game;
+            this.engine = engine;
         }
 
         // key values used for game saves?

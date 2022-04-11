@@ -10,7 +10,7 @@ namespace CopperSource.Objects
     {
         public string[] wads;
 
-        public EntityWorldspawn(Game1 game) : base(game)
+        public EntityWorldspawn(Engine game) : base(game)
         {
 
         }

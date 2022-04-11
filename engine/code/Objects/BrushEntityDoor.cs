@@ -8,7 +8,7 @@ namespace CopperSource.Objects
     [EntityClassname("func_door")]
     public class BrushEntityDoor : BrushEntity
     {
-        public BrushEntityDoor(Game1 game)
+        public BrushEntityDoor(Engine game)
             : base(game)
         {
 

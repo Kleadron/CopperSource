@@ -20,11 +20,12 @@ namespace CopperSource
 
         EffectParameter texDiffuseParam;
         EffectParameter texLightmapParam;
+        EffectParameter texDetailParam;
         EffectParameter diffuseColorParam;
         EffectParameter fogColorParam;
         EffectParameter fogVectorParam;
 
-        EffectParameter gammaParam;
+        EffectParameter detailScaleParam;
 
         EffectParameter worldViewProjParam;
         EffectParameter shaderIndexParam;
@@ -35,7 +36,7 @@ namespace CopperSource
 
         bool fogEnabled;
         bool vertexColorEnabled;
-        bool lightmapEnabled;
+        bool detailTextureEnabled;
 
         Matrix world = Matrix.Identity;
         Matrix view = Matrix.Identity;
@@ -50,7 +51,7 @@ namespace CopperSource
         float fogStart = 0;
         float fogEnd = 1;
 
-        float gamma = 2.2f;
+        Vector2 detailScale = Vector2.One;
 
         EffectDirtyFlags dirtyFlags = EffectDirtyFlags.All;
 
@@ -192,12 +193,12 @@ namespace CopperSource
         }
 
         /// <summary>
-        /// Gets or sets the gamma value.
+        /// Gets or sets the fog color.
         /// </summary>
-        public float Gamma
+        public Vector2 DetailScale
         {
-            get { return gammaParam.GetValueSingle(); }
-            set { gammaParam.SetValue(value); }
+            get { return detailScaleParam.GetValueVector2(); }
+            set { detailScaleParam.SetValue(value); }
         }
 
         /// <summary>
@@ -217,6 +218,15 @@ namespace CopperSource
         {
             get { return texLightmapParam.GetValueTexture2D(); }
             set { texLightmapParam.SetValue(value); }
+        }
+
+        /// <summary>
+        /// Gets or sets the current overlay texture.
+        /// </summary>
+        public Texture2D DetailTexture
+        {
+            get { return texDetailParam.GetValueTexture2D(); }
+            set { texDetailParam.SetValue(value); }
         }
 
 
@@ -240,15 +250,15 @@ namespace CopperSource
         /// <summary>
         /// Gets or sets whether the detail texture is enabled.
         /// </summary>
-        public bool LightmapEnabled
+        public bool DetailTextureEnabled
         {
-            get { return lightmapEnabled; }
+            get { return detailTextureEnabled; }
 
             set
             {
-                if (lightmapEnabled != value)
+                if (detailTextureEnabled != value)
                 {
-                    lightmapEnabled = value;
+                    detailTextureEnabled = value;
                     dirtyFlags |= EffectDirtyFlags.ShaderIndex;
                 }
             }
@@ -289,7 +299,7 @@ namespace CopperSource
 
             fogEnabled = cloneSource.fogEnabled;
             vertexColorEnabled = cloneSource.vertexColorEnabled;
-            lightmapEnabled = cloneSource.lightmapEnabled;
+            detailTextureEnabled = cloneSource.detailTextureEnabled;
 
             world = cloneSource.world;
             view = cloneSource.view;
@@ -302,7 +312,7 @@ namespace CopperSource
             fogStart = cloneSource.fogStart;
             fogEnd = cloneSource.fogEnd;
 
-            gamma = cloneSource.gamma;
+            detailScale = cloneSource.detailScale;
         }
 
 
@@ -322,11 +332,12 @@ namespace CopperSource
         {
             texDiffuseParam = Parameters["TexDiffuse"];
             texLightmapParam = Parameters["TexLightmap"];
+            texDetailParam = Parameters["TexDetail"];
             diffuseColorParam = Parameters["DiffuseColor"];
             fogColorParam = Parameters["FogColor"];
             fogVectorParam = Parameters["FogVector"];
 
-            gammaParam = Parameters["Gamma"];
+            detailScaleParam = Parameters["DetailScale"];
 
             worldViewProjParam = Parameters["WorldViewProj"];
             shaderIndexParam = Parameters["ShaderIndex"];
@@ -360,7 +371,7 @@ namespace CopperSource
                 if (vertexColorEnabled)
                     shaderIndex += 2;
 
-                if (lightmapEnabled)
+                if (detailTextureEnabled)
                     shaderIndex += 4;
 
                 shaderIndexParam.SetValue(shaderIndex);

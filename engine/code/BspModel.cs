@@ -8,10 +8,10 @@ namespace CopperSource
 {
     public class BspModel
     {
+        public int id;
         public Node rootNode;
         public BoundingBox bb;
         public Vector3 center;
-        //public Vector3 rotationalOrigin;
         public int numLeaves;
         public int firstFace;
         public int numFaces;

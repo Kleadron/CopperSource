@@ -27,8 +27,8 @@ namespace CopperSource
 
         public Vector3 Position;
         public Vector3 Normal;
-        public Vector2 TextureCoordinate1;
-        public Vector2 TextureCoordinate2;
+        public Vector2 TextureCoordinate;
+        public Vector2 LightmapCoordinate;
         //public Vector3 Binormal;
         //public Vector3 Tangent;
 
@@ -100,8 +100,8 @@ namespace CopperSource
         {
             Position = position;
             Normal = normal;
-            TextureCoordinate1 = textureCoordinate1;
-            TextureCoordinate2 = textureCoordinate2;
+            TextureCoordinate = textureCoordinate1;
+            LightmapCoordinate = textureCoordinate2;
             //Binormal = Vector3.Zero;
             //Tangent = Vector3.Zero;
         }
@@ -121,8 +121,8 @@ namespace CopperSource
             return (
                 "{{Position:" + Position.ToString() +
                 " Normal:" + Normal.ToString() +
-                " TextureCoordinate1:" + TextureCoordinate1.ToString() +
-                " TextureCoordinate2:" + TextureCoordinate2.ToString() +
+                " TextureCoordinate1:" + TextureCoordinate.ToString() +
+                " TextureCoordinate2:" + LightmapCoordinate.ToString() +
                 "}}"
             );
         }
@@ -131,8 +131,8 @@ namespace CopperSource
         {
             return ((left.Position == right.Position) &&
                     (left.Normal == right.Normal) &&
-                    (left.TextureCoordinate1 == right.TextureCoordinate1) &&
-                    (left.TextureCoordinate2 == right.TextureCoordinate2));
+                    (left.TextureCoordinate == right.TextureCoordinate) &&
+                    (left.LightmapCoordinate == right.LightmapCoordinate));
         }
 
         public static bool operator !=(WorldVertex left, WorldVertex right)
