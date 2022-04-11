@@ -108,6 +108,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="code\BspModel.cs" />
+    <Compile Include="code\DataDomain.cs" />
     <Compile Include="code\QoiSharp\Codec\Channels.cs" />
     <Compile Include="code\QoiSharp\Codec\ColorSpace.cs" />
     <Compile Include="code\QoiSharp\Codec\QoiCodec.cs" />
@@ -178,6 +179,7 @@
     <Content Include="ksoft\arctica.wad">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <None Include="ksoft\effects\LightmapEffect.fxb" />
     <None Include="ksoft\effects\LightmapEffect.xfxb">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>

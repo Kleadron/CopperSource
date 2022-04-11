@@ -278,6 +278,31 @@ namespace CopperSource
                 {
                     KConsole.Log("Map command not implemented");
                 }
+
+                if (args[0] == "setpos") 
+                {
+                    if (args.Length < 4)
+                    {
+                        KConsole.Log("Provide the X Y Z coordinate you want to go to");
+                        KConsole.Log("Example: \"setpos 500 500 20\"");
+                    }
+                    else
+                    {
+                        Vector3 newPos;
+                        if (
+                            float.TryParse(args[1], out newPos.X) &&
+                            float.TryParse(args[2], out newPos.Y) &&
+                            float.TryParse(args[3], out newPos.Z)
+                            )
+                        {
+                            playerPosition = newPos;
+                        }
+                        else
+                        {
+                            KConsole.Log("Could not set position");
+                        }
+                    } 
+                }
             }
         }
 
@@ -313,7 +338,7 @@ namespace CopperSource
             //RenderTarget2D rt = new RenderTarget2D(GraphicsDevice, 10, 10, false, SurfaceFormat.HdrBlendable, DepthFormat.Depth24Stencil8);
 
             scissorRS = new RasterizerState();
-            scissorRS.MultiSampleAntiAlias = true;
+            scissorRS.MultiSampleAntiAlias = false;
             scissorRS.ScissorTestEnable = true;
             scissorRS.FillMode = FillMode.Solid;
             scissorRS.CullMode = CullMode.CullCounterClockwiseFace;
@@ -687,7 +712,12 @@ namespace CopperSource
         {
             Texture2D tex = new Texture2D(GraphicsDevice, miptex.width, miptex.height, miptex.mip1data != null && enableMipMaps, SurfaceFormat.Color);
 
-            //miptex.colorPalette[255] = Color.Transparent;
+            MipTextureProperties texProperties = new MipTextureProperties(miptex.name);
+
+            // id 255 is always transparent on textures
+            if (texProperties.flags.HasFlag(MipTexPropertyFlags.Transparent))
+                miptex.colorPalette[255].A = 0;
+
             Color[] colors = new Color[miptex.width * miptex.height];
             for (int i = 0; i < colors.Length; i++)
             {
@@ -822,10 +852,10 @@ namespace CopperSource
                         continue;
                     }
 
-                    if (keyValues["classname"] == "func_build_zone")
-                    {
-                        continue;
-                    }
+                    //if (keyValues["classname"] == "func_build_zone")
+                    //{
+                    //    continue;
+                    //}
 
                     if (keyValues.ContainsKey("model") && keyValues["model"].StartsWith("*"))
                     {
@@ -923,6 +953,7 @@ namespace CopperSource
                 else
                 {
                     Console.WriteLine("Wad file does not exist! " + wadPath);
+                    KConsole.Log("Could not load WAD \"" + wadPath + "\"");
                 }
             }
 
@@ -974,7 +1005,7 @@ namespace CopperSource
 
                     if (isRandomized)
                     {
-                        Console.WriteLine(realName + " " + texNum);
+                        //Console.WriteLine(realName + " " + texNum);
 
                         if (!textureNameToID.ContainsKey(realName))
                         {
@@ -1996,38 +2027,43 @@ namespace CopperSource
             KConsole.SetResolution(GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height);
             KConsole.Draw(spriteBatch, hlFont, (float)gameTime.ElapsedGameTime.TotalSeconds, (float)gameTime.TotalGameTime.TotalSeconds);
 
-            DrawDebugLine("Camera position: " + playerPosition.ToString(), Color.White);
+            DrawDebugLine("Position: " + playerPosition.ToString(), Color.White);
 
             string visString = "Leaf/Custer: " + cameraLeaf.id.ToString() + "/" + cameraLeaf.visCluster;
             if (freezeVisibility)
                 visString += " (VIS FROZEN)";
             DrawDebugLine(visString, Color.White);
 
-            string drawCountString = "Drawn Leaves/Faces/Groups: " + drawnLeaves + "/" + drawnFaces + "/" + drawnGroups;
+            string drawCountString = "Leaves/Faces/Groups: " + drawnLeaves + "/" + drawnFaces + "/" + drawnGroups;
             DrawDebugLine(drawCountString, Color.White);
 
-            string modelQueueString = "Static/Dynamic Models: " + staticModels + "/" + dynamicModels;
+            // Static/Dynamic
+            string modelQueueString = "S/D Models: " + staticModels + "/" + dynamicModels;
             DrawDebugLine(modelQueueString, Color.White);
 
-            DrawDebugLine("Duplicate Face Queues: " + duplicateFaceQueues, Color.White);
+            //DrawDebugLine("Duplicate Faces: " + duplicateFaceQueues, Color.White);
 
             frameCounter++;
 
-            string fps = string.Format("fps: {0}", frameRate);
+            string fps = string.Format("FPS: {0}", frameRate);
             DrawDebugLine(fps, Color.White);
 
             //string gc = "GC: " + GC.GetTotalMemory(false) + " bytes";
-            gcsb.Clear();
-            gcsb.Append("GC: ");
-            gcsb.Append(GC.GetTotalMemory(false));
-            gcsb.Append(" bytes");
-            DrawDebugLine(gcsb, Color.White);
+            //gcsb.Clear();
+            //gcsb.Append("GC: ");
+            //gcsb.Append(GC.GetTotalMemory(false));
+            //gcsb.Append(" bytes");
+            //DrawDebugLine(gcsb, Color.White);
 
-            DrawDebugLine("Last Tick Time: " + lastUpdateTime.TotalMilliseconds.ToString("0.00") + " ms", Color.White);
-            DrawDebugLine("Last Frame Time: " + lastDrawTime.TotalMilliseconds.ToString("0.00") + " ms", Color.White);
+            // update time
+            DrawDebugLine("UT: " + lastUpdateTime.TotalMilliseconds.ToString("0.00") + " ms", Color.White);
+            // frame time
+            DrawDebugLine("FT: " + lastDrawTime.TotalMilliseconds.ToString("0.00") + " ms", Color.White);
             TimeSpan totalTime = (lastUpdateTime + lastDrawTime);
-            DrawDebugLine("Total Time: " + totalTime.TotalMilliseconds.ToString("0.00") + " ms", Color.White);
-            DrawDebugLine("Max Time: " + TargetElapsedTime.TotalMilliseconds.ToString("0.00") + " ms", Color.White);
+            // total time
+            DrawDebugLine("TT: " + totalTime.TotalMilliseconds.ToString("0.00") + " ms", Color.White);
+            // max time
+            DrawDebugLine("MT: " + TargetElapsedTime.TotalMilliseconds.ToString("0.00") + " ms", Color.White);
 
             DrawUpdateTimer("update", lastUpdateTime, TargetElapsedTime, Color.DarkOrange, Color.Red);
             DrawUpdateTimer("draw", lastDrawTime, TargetElapsedTime, Color.Indigo, Color.Red);
