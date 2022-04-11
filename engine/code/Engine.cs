@@ -805,8 +805,10 @@ namespace CopperSource
                 worldEffect.DirectionalLight1.Hammerize();
                 worldEffect.DirectionalLight2.Hammerize();
 
+                worldEffect.AmbientLightColor = Vector3.One * 0.25f;
+
                 worldEffect.PreferPerPixelLighting = true;
-                //worldEffect.SpecularColor = Vector3.Zero;
+                worldEffect.SpecularColor = Vector3.Zero;
             }
 
             worldEffect.TextureEnabled = true;
