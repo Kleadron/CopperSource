@@ -16,7 +16,7 @@ namespace CopperSource
         // light pink seems to give a good readable contrast as nothing in the game will normally be pink
         static Color color = Color.White;
 
-        const int MAX_HISTORY = 10;
+        const int MAX_HISTORY = 32;
 
         static List<LogEntry> logEntries = new List<LogEntry>();
         //static List<LogEntry> removeList = new List<LogEntry>();
