@@ -231,7 +231,7 @@ namespace CopperSource
                 KConsole.Log("Debugger is attached!");
             }
 
-            KConsole.listeners += Cmd_LightmapSave;
+            KConsole.listeners += Engine_CommandListener;
 
             Content.RootDirectory = "Content";
             //Content.Dispose();
@@ -246,14 +246,37 @@ namespace CopperSource
             graphics.SynchronizeWithVerticalRetrace = capFramerate;
         }
 
-        void Cmd_LightmapSave(string[] args)
+        void Engine_CommandListener(string[] args)
         {
-            if (args.Length >= 1)
+            if (args.Length > 0)
             {
                 if (args[0] == "lightmap_save")
                 {
-                    lightmapAtlas.texture.SaveAsPng(File.Open("lightmap.png", FileMode.Create), lightmapAtlas.atlasSize, lightmapAtlas.atlasSize);
-                    KConsole.Log("Saved lightmap as \"lightmap.png\"");
+                    FileStream fs = File.Open("lightmap.png", FileMode.Create);
+                    lightmapAtlas.texture.SaveAsPng(fs, lightmapAtlas.atlasSize, lightmapAtlas.atlasSize);
+                    fs.Close();
+                    KConsole.Log("Saved lightmap atlas as \"lightmap.png\"");
+                }
+
+                if (args[0] == "maps")
+                {
+                    string searchterm = "*";
+                    if (args.Length > 1)
+                    {
+                        searchterm = args[1];
+                    }
+
+                    string path = KSOFT_DATA_DIRECTORY + "/maps/";
+                    string[] filenames = Directory.GetFiles(path, searchterm, SearchOption.AllDirectories);
+                    for (int i = 0; i < filenames.Length; i++)
+                    {
+                        KConsole.Log(filenames[i].Substring(path.Length));
+                    }
+                }
+
+                if (args[0] == "map")
+                {
+                    KConsole.Log("Map command not implemented");
                 }
             }
         }
