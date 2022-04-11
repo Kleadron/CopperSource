@@ -241,7 +241,7 @@ namespace CopperSource
 
             //TargetElapsedTime = TimeSpan.FromSeconds(1d / 30d);
 
-            bool capFramerate = false;
+            bool capFramerate = true;
             IsFixedTimeStep = capFramerate;
             graphics.SynchronizeWithVerticalRetrace = capFramerate;
         }
@@ -795,6 +795,11 @@ namespace CopperSource
                     }
 
                     if (keyValues["classname"] == "func_ladder")
+                    {
+                        continue;
+                    }
+
+                    if (keyValues["classname"] == "func_build_zone")
                     {
                         continue;
                     }
@@ -1836,12 +1841,10 @@ namespace CopperSource
             //        Vector3 screenPosition = GraphicsDevice.Viewport.Project(entity.WorldOrigin, projection, view, Matrix.Identity);
             //        if (screenPosition.Z >= 0 && screenPosition.Z <= 1)
             //        {
-            //            Vector2 labelPos = new Vector2((int)screenPosition.X, (int)screenPosition.Y);
+            //            spriteBatch.Draw(pixel, new Rectangle((int)screenPosition.X - 8, (int)screenPosition.Y - 8, 16, 16), Color.DarkRed);
 
-            //            spriteBatch.Draw(pixel, new Rectangle((int)labelPos.X - 8, (int)labelPos.Y - 8, 16, 16), Color.DarkRed);
-
-            //            //spriteBatch.DrawString(hlFont, entity.classname, labelPos + Vector2.One, Color.Black);
-            //            spriteBatch.DrawString(hlFont, entity.classname, labelPos, Color.Red);
+            //            spriteBatch.DrawString(hlFont, entity.classname, labelPos + Vector2.One, Color.Black);
+            //            spriteBatch.DrawString(hlFont, entity.classname, (int)screenPosition.X, (int)screenPosition.Y, Color.Red);
             //        }
             //    }
             //}

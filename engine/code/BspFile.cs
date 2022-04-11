@@ -107,7 +107,13 @@ namespace CopperSource
             public ushort nEdges;         // Number of consecutive surfedges
 
             public ushort textureInfo;      // Index of the texture info structure
-            public uint styles;             // Specify lighting styles
+
+            public uint styles;
+            //public byte lightType;
+            //public byte baseLight;
+            //public byte style1;
+            //public byte style2;
+
             public int lightmapOffset;     // Offsets into the raw lightmap data
         }
 
