@@ -136,6 +136,7 @@
     <Compile Include="code\Node.cs" />
     <Compile Include="code\Objects\EntityClassnameAttribute.cs" />
     <Compile Include="code\Objects\EntityWorldspawn.cs" />
+    <Compile Include="code\RenderMode.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="code\Program.cs" />
     <Compile Include="code\Engine.cs" />
@@ -193,6 +194,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="ksoft\images\pixel.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+    <Content Include="ksoft\images\stencilmask.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="ksoft\images\tiledark.png">

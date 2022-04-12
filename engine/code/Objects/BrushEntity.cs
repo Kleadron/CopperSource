@@ -16,13 +16,22 @@ namespace CopperSource.Objects
         int modelIndex;
         public BspModel model;
         BoundingBox bb;
+        RenderMode renderMode;
 
         public override void SetKeyValue(string key, string value)
         {
             if (key == "model")
             {
                 modelIndex = int.Parse(value.Substring(1));
-                //Console.WriteLine(model.center);
+            }
+
+            if (key == "rendermode")
+            {
+                renderMode = (RenderMode)int.Parse(value);
+                if (renderMode == RenderMode.Texture)
+                {
+                    renderMode = RenderMode.Dither_EXT;
+                }
             }
 
             base.SetKeyValue(key, value);
@@ -43,9 +52,9 @@ namespace CopperSource.Objects
                 //game.SetModelTransform(Matrix.CreateTranslation(position));
                 //game.RecursiveTreeDraw(model.rootNode, game.TransformedVisPosition);
                 //game.DrawBspModel(model, Matrix.CreateTranslation(position));
-                if (position != Vector3.Zero)
+                if (position != Vector3.Zero || renderMode == RenderMode.Dither_EXT)
                 {
-                    engine.QueueDynamicBspModel(model, Matrix.CreateTranslation(position));
+                    engine.QueueDynamicBspModel(model, Matrix.CreateTranslation(position), renderMode);
                 }
                 else
                 {

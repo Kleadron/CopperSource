@@ -84,6 +84,7 @@ namespace CopperSource
         BasicEffect overdrawEffect;
         //DualTextureEffect lightmapWorldEffect;
         LightmapEffect lightmapWorldEffect;
+        AlphaTestEffect alphaTestEffect;
 
         VertexBuffer vb;
         IndexBuffer ib;
@@ -134,10 +135,11 @@ namespace CopperSource
         {
             public BspModel model;
             public Matrix transform;
+            public RenderMode mode;
             public bool[] vislist;
         }
 
-        Texture2D grid, pixel, graypixel, detailTex;
+        Texture2D grid, pixel, graypixel, stencilMask;
 
         RasterizerState wireframeRS;
         RasterizerState scissorRS;
@@ -145,6 +147,7 @@ namespace CopperSource
         BlendState multiplyBS;
 
         DepthStencilState overlayDSS;
+        DepthStencilState ditherCreateDSS, ditherApplyDSS;
 
         SamplerState worldSS;
 
@@ -213,6 +216,7 @@ namespace CopperSource
             graphics.PreferredBackBufferWidth = res.X;
             graphics.PreferredBackBufferHeight = res.Y;
             graphics.PreferMultiSampling = false;
+            graphics.PreferredDepthStencilFormat = DepthFormat.Depth24Stencil8;
 
             KConsole.SetResolution(res.X, res.Y);
 
@@ -356,6 +360,20 @@ namespace CopperSource
             overlayDSS.DepthBufferFunction = CompareFunction.LessEqual;
             overlayDSS.DepthBufferWriteEnable = false;
             overlayDSS.DepthBufferEnable = true;
+
+            ditherCreateDSS = new DepthStencilState();
+            ditherCreateDSS.StencilEnable = true;
+            ditherCreateDSS.StencilFunction = CompareFunction.Always;
+            ditherCreateDSS.StencilPass = StencilOperation.Replace;
+            ditherCreateDSS.ReferenceStencil = 1;
+            ditherCreateDSS.DepthBufferEnable = true;
+
+            ditherApplyDSS = new DepthStencilState();
+            ditherApplyDSS.StencilEnable = true;
+            ditherApplyDSS.StencilFunction = CompareFunction.LessEqual;
+            ditherApplyDSS.StencilPass = StencilOperation.Keep;
+            ditherApplyDSS.ReferenceStencil = 1;
+            ditherApplyDSS.DepthBufferEnable = true;
 
             worldSS = new SamplerState();
             worldSS.AddressU = TextureAddressMode.Wrap;
@@ -712,6 +730,8 @@ namespace CopperSource
         {
             Texture2D tex = new Texture2D(GraphicsDevice, miptex.width, miptex.height, miptex.mip1data != null && enableMipMaps, SurfaceFormat.Color);
 
+            tex.Tag = miptex.name.ToUpper();
+
             MipTextureProperties texProperties = new MipTextureProperties(miptex.name);
 
             // id 255 is always transparent on textures
@@ -785,6 +805,7 @@ namespace CopperSource
 
             pixel = LoadImage("pixel");//Content.Load<Texture2D>("Textures/pixel");
             graypixel = LoadImage("graypixel");
+            stencilMask = LoadImage("stencilmask");
 
             wireframeRS = new RasterizerState();
             wireframeRS.CullMode = CullMode.None;
@@ -927,6 +948,10 @@ namespace CopperSource
             lightmapWorldEffect.FogStart = fogStart;
             lightmapWorldEffect.FogEnd = fogEnd;
             lightmapWorldEffect.FogColor = skyColor.ToVector3();
+
+            alphaTestEffect = new AlphaTestEffect(GraphicsDevice);
+            //alphaTestEffect.ReferenceAlpha = 1;
+            alphaTestEffect.AlphaFunction = CompareFunction.Equal;
 
             //textureNameToID = new Dictionary<string, int>();
             
@@ -1663,20 +1688,24 @@ namespace CopperSource
             }
         }
 
+        // for models that have no positional offset or no special effects
         public void QueueStaticBspModel(BspModel model, bool[] vislist = null)
         {
             ModelDrawEntry entry = new ModelDrawEntry();
             entry.model = model;
             entry.transform = Matrix.Identity;
             entry.vislist = vislist;
+            entry.mode = RenderMode.Normal;
             modelQueueStatic.Enqueue(entry);
         }
 
-        public void QueueDynamicBspModel(BspModel model, Matrix transform, bool[] vislist = null)
+        // models that have been moved or need special rendering done should be queued with this
+        public void QueueDynamicBspModel(BspModel model, Matrix transform, RenderMode mode, bool[] vislist = null)
         {
             ModelDrawEntry entry = new ModelDrawEntry();
             entry.model = model;
             entry.transform = transform;
+            entry.mode = mode;
             entry.vislist = vislist;
             modelQueueDynamic.Enqueue(entry);
         }
@@ -1731,6 +1760,15 @@ namespace CopperSource
                 //GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
                 Texture2D texture = textures[group.texture];
+
+                //if (texture.Tag != null && ((string)texture.Tag).StartsWith("GLASS_"))
+                //{
+                //    GraphicsDevice.DepthStencilState = ditherApplyDSS;
+                //}
+                //else
+                //{
+                //    GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+                //}
 
                 // set up the appropriate effects
                 if (overdrawView)
@@ -1797,6 +1835,15 @@ namespace CopperSource
             while (modelQueueDynamic.Count > 0)
             {
                 ModelDrawEntry entry = modelQueueDynamic.Dequeue();
+
+                if (entry.mode == RenderMode.Dither_EXT)
+                {
+                    GraphicsDevice.DepthStencilState = ditherApplyDSS;
+                }
+                else
+                {
+                    GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+                }
 
                 ClearFaceQueueBlock();
                 SetModelTransform(entry.transform);
@@ -1983,14 +2030,33 @@ namespace CopperSource
             //drawTimer.Start();
             drawTimer.Restart();
 
+            GraphicsDevice.Clear(Color.Black);
+
+            spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.Opaque, SamplerState.PointWrap, ditherCreateDSS, null, alphaTestEffect);
+            spriteBatch.Draw(stencilMask,
+                new Rectangle(0, 0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height),
+                new Rectangle(0, 0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height),
+                Color.White);
+            spriteBatch.End();
+
             if (overdrawView)
             {
-                GraphicsDevice.Clear(Color.Black);
+                GraphicsDevice.Clear(ClearOptions.DepthBuffer | ClearOptions.Target, Color.Black, 1, 0);
             }
             else
             {
-                GraphicsDevice.Clear(skyColor);
+                GraphicsDevice.Clear(ClearOptions.DepthBuffer | ClearOptions.Target, skyColor, 1, 0);
             }
+
+            var alphaTestMatrix = Matrix.CreateOrthographicOffCenter(0,
+                GraphicsDevice.Viewport.Width,
+                GraphicsDevice.Viewport.Height,
+                0, 0, 1
+            );
+
+            alphaTestEffect.Projection = alphaTestMatrix;
+
+            
 
             //Viewport defaultViewport = GraphicsDevice.Viewport;
             //Viewport splitTL = new Viewport(defaultViewport.X, defaultViewport.Y, defaultViewport.Width / 2, defaultViewport.Height / 2);
