@@ -135,7 +135,8 @@ namespace CopperSource
         {
             public BspModel model;
             public Matrix transform;
-            public RenderMode mode;
+            public RenderMode renderMode;
+            public Color renderColor;
             public bool[] vislist;
         }
 
@@ -1695,17 +1696,19 @@ namespace CopperSource
             entry.model = model;
             entry.transform = Matrix.Identity;
             entry.vislist = vislist;
-            entry.mode = RenderMode.Normal;
+            entry.renderMode = RenderMode.Normal;
+            entry.renderColor = Color.White;
             modelQueueStatic.Enqueue(entry);
         }
 
         // models that have been moved or need special rendering done should be queued with this
-        public void QueueDynamicBspModel(BspModel model, Matrix transform, RenderMode mode, bool[] vislist = null)
+        public void QueueDynamicBspModel(BspModel model, Matrix transform, RenderMode mode, Color color, bool[] vislist = null)
         {
             ModelDrawEntry entry = new ModelDrawEntry();
             entry.model = model;
             entry.transform = transform;
-            entry.mode = mode;
+            entry.renderMode = mode;
+            entry.renderColor = color;
             entry.vislist = vislist;
             modelQueueDynamic.Enqueue(entry);
         }
@@ -1814,6 +1817,8 @@ namespace CopperSource
             ClearFaceQueueBlock();
             SetModelTransform(Matrix.Identity);
 
+            lightmapWorldEffect.DiffuseColor = Vector3.One;
+
             while (modelQueueStatic.Count > 0)
             {
                 ModelDrawEntry entry = modelQueueStatic.Dequeue();
@@ -1836,13 +1841,30 @@ namespace CopperSource
             {
                 ModelDrawEntry entry = modelQueueDynamic.Dequeue();
 
-                if (entry.mode == RenderMode.Dither_EXT)
+                lightmapWorldEffect.DiffuseColor = entry.renderColor.ToVector3();
+
+                if (overdrawView)
                 {
-                    GraphicsDevice.DepthStencilState = ditherApplyDSS;
+                    GraphicsDevice.BlendState = BlendState.Additive;
+                    GraphicsDevice.DepthStencilState = DepthStencilState.None;
                 }
                 else
                 {
+                    GraphicsDevice.BlendState = BlendState.Opaque;
                     GraphicsDevice.DepthStencilState = DepthStencilState.Default;
+
+                    lightmapWorldEffect.LightmapEnabled = true;
+
+                    if (entry.renderMode == RenderMode.Dither_EXT)
+                    {
+                        GraphicsDevice.DepthStencilState = ditherApplyDSS;
+                    }
+                    if (entry.renderMode == RenderMode.Additive) 
+                    {
+                        GraphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
+                        GraphicsDevice.BlendState = BlendState.Additive;
+                        lightmapWorldEffect.LightmapEnabled = false;
+                    }
                 }
 
                 ClearFaceQueueBlock();

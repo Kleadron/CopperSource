@@ -17,6 +17,7 @@ namespace CopperSource.Objects
         public BspModel model;
         BoundingBox bb;
         RenderMode renderMode;
+        Color renderColor = Color.White;
 
         public override void SetKeyValue(string key, string value)
         {
@@ -28,9 +29,26 @@ namespace CopperSource.Objects
             if (key == "rendermode")
             {
                 renderMode = (RenderMode)int.Parse(value);
-                if (renderMode == RenderMode.Texture)
+                if (renderMode == RenderMode.Texture || renderMode == RenderMode.Color)
                 {
                     renderMode = RenderMode.Dither_EXT;
+                }
+            }
+
+            if (key == "rendercolor")
+            {
+                try
+                {
+                    Vector3 v = DataHelper.ValueToVector3(value);
+                    v /= 256;
+                    if (v.Length() > 0)
+                    {
+                        renderColor = new Color(v.X, v.Y, v.Z);
+                    }
+                }
+                catch (Exception)
+                {
+
                 }
             }
 
@@ -52,9 +70,9 @@ namespace CopperSource.Objects
                 //game.SetModelTransform(Matrix.CreateTranslation(position));
                 //game.RecursiveTreeDraw(model.rootNode, game.TransformedVisPosition);
                 //game.DrawBspModel(model, Matrix.CreateTranslation(position));
-                if (position != Vector3.Zero || renderMode == RenderMode.Dither_EXT)
+                if (position != Vector3.Zero || renderMode == RenderMode.Dither_EXT || renderMode == RenderMode.Additive)
                 {
-                    engine.QueueDynamicBspModel(model, Matrix.CreateTranslation(position), renderMode);
+                    engine.QueueDynamicBspModel(model, Matrix.CreateTranslation(position), renderMode, renderColor);
                 }
                 else
                 {
