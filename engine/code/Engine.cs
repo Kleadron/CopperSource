@@ -192,6 +192,10 @@ namespace CopperSource
         TimeSpan lastUpdateTime;
         TimeSpan lastDrawTime;
 
+        bool preferSuperSampling = true;
+        bool useSuperSampling = true;
+        RenderTarget2D superSampleRT;
+
         string videoDriver = "D3D9";
 
         // please give me a better way to do this
@@ -249,6 +253,29 @@ namespace CopperSource
             bool capFramerate = true;
             IsFixedTimeStep = capFramerate;
             graphics.SynchronizeWithVerticalRetrace = capFramerate;
+
+            Window.ClientSizeChanged += new EventHandler<EventArgs>(Window_ClientSizeChanged);
+        }
+
+        bool windowSizeChanged = false;
+        void Window_ClientSizeChanged(object sender, EventArgs e)
+        {
+            windowSizeChanged = true;
+        }
+
+        void CreateSuperSampleRT(int width, int height)
+        {
+            if (superSampleRT != null)
+                superSampleRT.Dispose();
+
+            if (width > 4096 || height > 4096)
+            {
+                useSuperSampling = false;
+                return;
+            }
+
+            useSuperSampling = true;
+            superSampleRT = new RenderTarget2D(GraphicsDevice, width, height, false, SurfaceFormat.Color, DepthFormat.Depth24Stencil8);
         }
 
         void Engine_CommandListener(string[] args)
@@ -307,6 +334,21 @@ namespace CopperSource
                             KConsole.Log("Could not set position");
                         }
                     } 
+                }
+
+                if (args[0] == "supersample")
+                {
+                    if (args.Length > 1)
+                    {
+                        if (args[1][0] == '1')
+                        {
+                            preferSuperSampling = true;
+                        }
+                        if (args[1][0] == '0')
+                        {
+                            preferSuperSampling = false;
+                        }
+                    }
                 }
             }
         }
@@ -367,7 +409,7 @@ namespace CopperSource
             ditherCreateDSS.StencilFunction = CompareFunction.Always;
             ditherCreateDSS.StencilPass = StencilOperation.Replace;
             ditherCreateDSS.ReferenceStencil = 1;
-            ditherCreateDSS.DepthBufferEnable = true;
+            ditherCreateDSS.DepthBufferEnable = false;
 
             ditherApplyDSS = new DepthStencilState();
             ditherApplyDSS.StencilEnable = true;
@@ -394,6 +436,8 @@ namespace CopperSource
             }
 
             Window.Title = windowTitle;
+
+            CreateSuperSampleRT(graphics.PreferredBackBufferWidth * 2, graphics.PreferredBackBufferHeight * 2);
 
             base.Initialize();
         }
@@ -1789,7 +1833,7 @@ namespace CopperSource
                 {
                     lightmapWorldEffect.World = transform;
                     lightmapWorldEffect.DiffuseTexture = texture;
-                    lightmapWorldEffect.LightmapEnabled = true;
+                    //lightmapWorldEffect.LightmapEnabled = true;
                     lightmapWorldEffect.LightmapTexture = lightmapAtlas.texture;
                     lightmapPass.Apply();
                 }
@@ -1817,6 +1861,7 @@ namespace CopperSource
             ClearFaceQueueBlock();
             SetModelTransform(Matrix.Identity);
 
+            lightmapWorldEffect.LightmapEnabled = true;
             lightmapWorldEffect.DiffuseColor = Vector3.One;
 
             while (modelQueueStatic.Count > 0)
@@ -1853,17 +1898,18 @@ namespace CopperSource
                     GraphicsDevice.BlendState = BlendState.Opaque;
                     GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
-                    lightmapWorldEffect.LightmapEnabled = true;
+                    //lightmapWorldEffect.LightmapEnabled = true;
 
                     if (entry.renderMode == RenderMode.Dither_EXT)
                     {
                         GraphicsDevice.DepthStencilState = ditherApplyDSS;
+                        //lightmapWorldEffect.LightmapEnabled = false;
                     }
                     if (entry.renderMode == RenderMode.Additive) 
                     {
                         GraphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
                         GraphicsDevice.BlendState = BlendState.Additive;
-                        lightmapWorldEffect.LightmapEnabled = false;
+                        //lightmapWorldEffect.LightmapEnabled = false;
                     }
                 }
 
@@ -2052,6 +2098,17 @@ namespace CopperSource
             //drawTimer.Start();
             drawTimer.Restart();
 
+            if (windowSizeChanged && preferSuperSampling)
+            {
+                CreateSuperSampleRT(Window.ClientBounds.Width * 2, Window.ClientBounds.Height * 2);
+                windowSizeChanged = false;
+            }
+
+            if (preferSuperSampling && useSuperSampling)
+            {
+                GraphicsDevice.SetRenderTarget(superSampleRT);
+            }
+
             GraphicsDevice.Clear(Color.Black);
 
             spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.Opaque, SamplerState.PointWrap, ditherCreateDSS, null, alphaTestEffect);
@@ -2107,6 +2164,17 @@ namespace CopperSource
             //DrawScene(gameTime, 270, "RIGHT");
 
             //GraphicsDevice.Viewport = defaultViewport;
+
+            GraphicsDevice.SetRenderTarget(null);
+
+            if (preferSuperSampling && useSuperSampling)
+            {
+                spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.Opaque, SamplerState.LinearClamp, null, null);
+                spriteBatch.Draw(superSampleRT,
+                    new Rectangle(0, 0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height),
+                    Color.White);
+                spriteBatch.End();
+            }
 
             spriteBatch.Begin(SpriteSortMode.Deferred, 
                 BlendState.AlphaBlend, 

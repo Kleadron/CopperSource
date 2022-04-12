@@ -18,6 +18,7 @@ namespace CopperSource.Objects
         BoundingBox bb;
         RenderMode renderMode;
         Color renderColor = Color.White;
+        byte renderFXAmount;
 
         public override void SetKeyValue(string key, string value)
         {
@@ -52,6 +53,11 @@ namespace CopperSource.Objects
                 }
             }
 
+            if (key == "renderamt")
+            {
+                renderFXAmount = byte.Parse(value);
+            }
+
             base.SetKeyValue(key, value);
         }
 
@@ -60,6 +66,7 @@ namespace CopperSource.Objects
             model = engine.models[modelIndex];
             originOffset = model.center;
             bb = new BoundingBox(model.bb.Min + position, model.bb.Max + position);
+            //renderColor.A = renderFXAmount;
         }
 
         public override void Draw(float delta, float total)
