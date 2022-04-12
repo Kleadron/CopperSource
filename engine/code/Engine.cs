@@ -73,7 +73,7 @@ namespace CopperSource
         float cameraYawAngle = 0f;
         float cameraPitchAngle = 0f;
 
-        string mapToLoad = KSOFT_DATA_DIRECTORY + "/maps/de_aztec.bsp";
+        string mapToLoad = KSOFT_DATA_DIRECTORY + "/maps/c1a0.bsp";
 
         //BspFile mapFile;
         //SpriteFont font;
