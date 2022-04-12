@@ -16,7 +16,8 @@ namespace CopperSource
         // light pink seems to give a good readable contrast as nothing in the game will normally be pink
         static Color color = Color.White;
 
-        const int MAX_HISTORY = 32;
+        const int MAX_LOG_HISTORY = 32;
+        const int MAX_COMMAND_HISTORY = 32;
 
         static List<LogEntry> logEntries = new List<LogEntry>();
         //static List<LogEntry> removeList = new List<LogEntry>();
@@ -24,6 +25,9 @@ namespace CopperSource
         public static Action<string[]> listeners;
 
         static StringBuilder inputBuffer = new StringBuilder(64);
+
+        static List<string> commandHistory = new List<string>();
+        static int historyIndex = 0;
 
         const int TEXT_SCALE = 1;
 
@@ -69,11 +73,19 @@ namespace CopperSource
 
             if (active && Input.KeyPressed(Keys.Enter))
             {
-                Log("]" + inputBuffer.ToString());
-                string[] split = inputBuffer.ToString().Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                string commandString = inputBuffer.ToString();
+                Input.ClearInputBuffer();
+
+                Log("]" + commandString);
+                string[] split = commandString.Split(new char[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
                 if (split.Length > 0)
                     listeners(split);
-                Input.ClearInputBuffer();
+
+                //commandHistory.Add(commandString);
+                //while (commandHistory.Count > MAX_COMMAND_HISTORY)
+                //{
+                //    commandHistory.RemoveAt(0);
+                //}
             }
         }
 
@@ -81,7 +93,7 @@ namespace CopperSource
         {
             int linePosition = screenHeight - ((font.LineSpacing * TEXT_SCALE) * 2);
 
-            while (logEntries.Count > MAX_HISTORY)
+            while (logEntries.Count > MAX_LOG_HISTORY)
             {
                 logEntries.RemoveAt(0);
             }

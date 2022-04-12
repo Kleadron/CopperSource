@@ -192,9 +192,10 @@ namespace CopperSource
         TimeSpan lastUpdateTime;
         TimeSpan lastDrawTime;
 
-        bool preferSuperSampling = true;
-        bool useSuperSampling = true;
+        bool preferSuperSampling = false;
+        bool useSuperSampling = false;
         RenderTarget2D superSampleRT;
+        Point superSampleScale = new Point(2, 2);
 
         string videoDriver = "D3D9";
 
@@ -257,10 +258,10 @@ namespace CopperSource
             Window.ClientSizeChanged += new EventHandler<EventArgs>(Window_ClientSizeChanged);
         }
 
-        bool windowSizeChanged = false;
+        bool refreshSSRT = true;
         void Window_ClientSizeChanged(object sender, EventArgs e)
         {
-            windowSizeChanged = true;
+            refreshSSRT = true;
         }
 
         void CreateSuperSampleRT(int width, int height)
@@ -268,11 +269,14 @@ namespace CopperSource
             if (superSampleRT != null)
                 superSampleRT.Dispose();
 
+            // untested on FNA but should be allowed
+#if XNA
             if (width > 4096 || height > 4096)
             {
                 useSuperSampling = false;
                 return;
             }
+#endif
 
             useSuperSampling = true;
             superSampleRT = new RenderTarget2D(GraphicsDevice, width, height, false, SurfaceFormat.Color, DepthFormat.Depth24Stencil8);
@@ -336,17 +340,46 @@ namespace CopperSource
                     } 
                 }
 
-                if (args[0] == "supersample")
+                // r_ probably means renderer or rasterizer or some crap
+                if (args[0] == "r_ss")
                 {
                     if (args.Length > 1)
                     {
                         if (args[1][0] == '1')
                         {
                             preferSuperSampling = true;
+                            refreshSSRT = true;
+                            superSampleScale = new Point(2, 2);
+                            KConsole.Log("SuperSampling mode 1, render res 2x2 (full super sampling)");
                         }
-                        if (args[1][0] == '0')
+                        else if (args[1][0] == '2')
+                        {
+                            preferSuperSampling = true;
+                            refreshSSRT = true;
+                            superSampleScale = new Point(1, 2);
+                            KConsole.Log("SuperSampling mode 2, render res 1x2 (vertical dither blend)");
+                        }
+                        else if (args[1][0] == '3')
+                        {
+                            preferSuperSampling = true;
+                            refreshSSRT = true;
+                            superSampleScale = new Point(2, 1);
+                            KConsole.Log("SuperSampling mode 3, render res 2x1 (horizontal dither blend)");
+                        }
+                        else if (args[1][0] == '0')
                         {
                             preferSuperSampling = false;
+                            if (superSampleRT != null)
+                            {
+                                superSampleRT.Dispose();
+                                superSampleRT = null;
+                                refreshSSRT = true;
+                            }
+                            KConsole.Log("SuperSampling mode 0, render res 1x1 (disabled)");
+                        }
+                        else
+                        {
+                            KConsole.Log("Unrecognized SuperSampling mode");
                         }
                     }
                 }
@@ -437,7 +470,7 @@ namespace CopperSource
 
             Window.Title = windowTitle;
 
-            CreateSuperSampleRT(graphics.PreferredBackBufferWidth * 2, graphics.PreferredBackBufferHeight * 2);
+            //CreateSuperSampleRT(graphics.PreferredBackBufferWidth * 2, graphics.PreferredBackBufferHeight * 2);
 
             base.Initialize();
         }
@@ -1958,7 +1991,9 @@ namespace CopperSource
             Vector3 normal = Vector3.TransformNormal(Vector3.UnitX, cameraRotation);
             view = Matrix.CreateLookAt(playerPosition + cameraOffset, playerPosition + cameraOffset + normal, Vector3.UnitZ);
 
-            projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(fov), GraphicsDevice.Viewport.AspectRatio, 1f, cameraClipDistance);
+            projection = Matrix.CreatePerspectiveFieldOfView(MathHelper.ToRadians(fov), 
+                (float)Window.ClientBounds.Width / (float)Window.ClientBounds.Height, 
+                10f, cameraClipDistance);
 
             //viewFrustum = new BoundingFrustum(view * projection);
 
@@ -2013,8 +2048,6 @@ namespace CopperSource
             //        if (screenPosition.Z >= 0 && screenPosition.Z <= 1)
             //        {
             //            spriteBatch.Draw(pixel, new Rectangle((int)screenPosition.X - 8, (int)screenPosition.Y - 8, 16, 16), Color.DarkRed);
-
-            //            spriteBatch.DrawString(hlFont, entity.classname, labelPos + Vector2.One, Color.Black);
             //            spriteBatch.DrawString(hlFont, entity.classname, (int)screenPosition.X, (int)screenPosition.Y, Color.Red);
             //        }
             //    }
@@ -2098,10 +2131,10 @@ namespace CopperSource
             //drawTimer.Start();
             drawTimer.Restart();
 
-            if (windowSizeChanged && preferSuperSampling)
+            if (refreshSSRT && preferSuperSampling)
             {
-                CreateSuperSampleRT(Window.ClientBounds.Width * 2, Window.ClientBounds.Height * 2);
-                windowSizeChanged = false;
+                CreateSuperSampleRT(Window.ClientBounds.Width * superSampleScale.X, Window.ClientBounds.Height * superSampleScale.Y);
+                refreshSSRT = false;
             }
 
             if (preferSuperSampling && useSuperSampling)

@@ -80,10 +80,13 @@ namespace CopperSource
                                 //throw new Exception("Too many textures to build Lightmap atlas!");
                                 int nextSize = atlasSize + sizeIncrement;
 
+                                // untested on FNA but should also be allowed
+#if XNA
                                 if (nextSize > 4096)
                                 {
                                     throw new Exception("Too many textures to build Lightmap atlas! Why is your map so big!");
                                 }
+#endif
 
                                 Console.WriteLine("Lightmap Atlas: " + atlasSize + "x" + atlasSize + " is too small, trying " + nextSize + "x" + nextSize);
                                 sizeFits = false;
