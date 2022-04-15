@@ -73,7 +73,7 @@ namespace CopperSource
         float cameraYawAngle = 0f;
         float cameraPitchAngle = 0f;
 
-        string mapToLoad = KSOFT_DATA_DIRECTORY + "/maps/c1a0.bsp";
+        string mapToLoad;// = KSOFT_DATA_DIRECTORY + "/maps/c1a0.bsp";
 
         //BspFile mapFile;
         //SpriteFont font;
@@ -94,8 +94,10 @@ namespace CopperSource
 
         Face[] mapFaces;
         Dictionary<string, List<int>> textureNameToID = new Dictionary<string,List<int>>();
-        Texture2D[] textures;
         List<Texture2D> texList = new List<Texture2D>();
+        List<TextureProperties> texPropList = new List<TextureProperties>();
+        Texture2D[] textures;
+        TextureProperties[] textureProperties;
         //Texture2D[] lightmapTextures;
         //List<Texture2D> lightmapList = new List<Texture2D>();
         int nextTexIndex = 1;
@@ -192,10 +194,12 @@ namespace CopperSource
         TimeSpan lastUpdateTime;
         TimeSpan lastDrawTime;
 
-        bool preferSuperSampling = false;
+        bool preferSuperSampling = true;
         bool useSuperSampling = false;
         RenderTarget2D superSampleRT;
         Point superSampleScale = new Point(2, 2);
+
+        bool doDitherFlip = false;
 
         string videoDriver = "D3D9";
 
@@ -215,6 +219,10 @@ namespace CopperSource
         public Engine()
         {
             //Vector3 v = DataHelper.ValueToVector3("3.0 4.1 333");
+            Console.Title = "KSoft Copper Console";
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Console.WriteLine("KSoft Copper Game Engine");
+            Console.ResetColor();
 
             Point res = new Point(1280, 720);
 
@@ -256,6 +264,48 @@ namespace CopperSource
             graphics.SynchronizeWithVerticalRetrace = capFramerate;
 
             Window.ClientSizeChanged += new EventHandler<EventArgs>(Window_ClientSizeChanged);
+
+            if (LaunchParameters.ContainsKey("map"))
+            {
+                mapToLoad = KSOFT_DATA_DIRECTORY + "/maps/" + LaunchParameters["map"] + ".bsp";
+            }
+            else
+            {
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine("Listing maps from " + KSOFT_DATA_DIRECTORY + "/maps/");
+
+                string searchterm = "*";
+
+                Console.ForegroundColor = ConsoleColor.DarkCyan;
+                string path = KSOFT_DATA_DIRECTORY + "/maps/";
+                string[] filenames = Directory.GetFiles(path, searchterm, SearchOption.AllDirectories);
+                for (int i = 0; i < filenames.Length; i++)
+                {
+                    Console.WriteLine(filenames[i].Substring(path.Length));
+                }
+
+                Console.ForegroundColor = ConsoleColor.Cyan;
+                Console.WriteLine("Enter a map name to load");
+                Console.ResetColor();
+                bool validMap = false;
+                while (!validMap)
+                {
+                    string map = Console.ReadLine();
+                    mapToLoad = KSOFT_DATA_DIRECTORY + "/maps/" + map + ".bsp";
+                    bool exists = File.Exists(mapToLoad);
+                    if (exists)
+                    {
+                        validMap = true;
+                    }
+                    else
+                    {
+                        Console.ForegroundColor = ConsoleColor.Red;
+                        Console.WriteLine("Map file \"" + mapToLoad + "\" does not exist");
+                        Console.ResetColor();
+                    }
+                }
+                
+            }
         }
 
         bool refreshSSRT = true;
@@ -379,9 +429,36 @@ namespace CopperSource
                         }
                         else
                         {
-                            KConsole.Log("Unrecognized SuperSampling mode");
+                            KConsole.Log("Unrecognized mode");
                         }
                     }
+                }
+
+                if (args[0] == "r_ditherflip")
+                {
+                    if (args.Length > 1)
+                    {
+                        if (args[1][0] == '1')
+                        {
+                            doDitherFlip = true;
+                            KConsole.Log("Dither-flip enabled");
+                        }
+                        else if (args[1][0] == '0')
+                        {
+                            doDitherFlip = false;
+                            KConsole.Log("Dither-flip disabled");
+                        }
+                        else
+                        {
+                            KConsole.Log("Unrecognized mode");
+                        }
+                    }
+                }
+
+                // :)
+                if (args[0] == "quit" || args[0] == "quti")
+                {
+                    Exit();
                 }
             }
         }
@@ -446,7 +523,7 @@ namespace CopperSource
 
             ditherApplyDSS = new DepthStencilState();
             ditherApplyDSS.StencilEnable = true;
-            ditherApplyDSS.StencilFunction = CompareFunction.LessEqual;
+            ditherApplyDSS.StencilFunction = CompareFunction.NotEqual;
             ditherApplyDSS.StencilPass = StencilOperation.Keep;
             ditherApplyDSS.ReferenceStencil = 1;
             ditherApplyDSS.DepthBufferEnable = true;
@@ -460,7 +537,7 @@ namespace CopperSource
             //worldSS.
             //worldSS.
 
-            string windowTitle = "CopperSource - " + mapToLoad;
+            string windowTitle = "KSoft Copper - " + mapToLoad;
 
             windowTitle += " - " + videoDriver;
             if (System.Diagnostics.Debugger.IsAttached)
@@ -777,8 +854,12 @@ namespace CopperSource
                 leafVisList[i] = false;
             }
 
+            int visDataLength = visData.Length-1;
             for (int c = 1; c < leaves.Length; v++)
             {
+                // idk why this happens but going to implement a check now
+                if (v > visDataLength)
+                    break;
 
                 if (visData[v] == 0)
                 {
@@ -883,7 +964,7 @@ namespace CopperSource
 
             pixel = LoadImage("pixel");//Content.Load<Texture2D>("Textures/pixel");
             graypixel = LoadImage("graypixel");
-            stencilMask = LoadImage("stencilmask");
+            stencilMask = LoadImage("stencilmask_50");
 
             wireframeRS = new RasterizerState();
             wireframeRS.CullMode = CullMode.None;
@@ -1040,6 +1121,8 @@ namespace CopperSource
             textureNameToID["missing"] = new List<int>();
             textureNameToID["missing"].Add(0);
 
+            texPropList.Add(new TextureProperties());
+
             EntityWorldspawn worldspawn = GetEntityByType<EntityWorldspawn>();
 
             int wadCount = 0;
@@ -1066,6 +1149,9 @@ namespace CopperSource
             for (int i = 0; i < mapFile.textures.Length; i++)
             {
                 MipTexture miptex = mapFile.textures[i];
+                MipTextureProperties miptexProperties = new MipTextureProperties(miptex.name);
+                TextureProperties texProperties = new TextureProperties();
+                texProperties.light = miptexProperties.flags.HasFlag(MipTexPropertyFlags.Light);
                 string fileName = miptex.name.ToUpper();
                 string realName = miptex.name;
                 bool isRandomized = false;
@@ -1118,12 +1204,14 @@ namespace CopperSource
                         }
                         textureNameToID[realName].Add(nextTexIndex++);
                         texList.Add(tex);
+                        texPropList.Add(texProperties);
                     }
                     else
                     {
                         textureNameToID[realName] = new List<int>();
                         textureNameToID[realName].Add(nextTexIndex++);
                         texList.Add(tex);
+                        texPropList.Add(texProperties);
                     }
                 }
                 else
@@ -1131,7 +1219,7 @@ namespace CopperSource
                     textureNameToID[realName] = new List<int>();
                     textureNameToID[realName].Add(0);
 
-                    Console.WriteLine("Cannot load texture " + fileName);
+                    Console.WriteLine("Cannot load texture \"" + fileName + "\"");
                 }
             }
 
@@ -1140,6 +1228,14 @@ namespace CopperSource
                 if (wads[j] != null)
                     wads[j].Close();
             }
+
+            textures = texList.ToArray();
+            texList.Clear();
+            texList = null;
+
+            textureProperties = texPropList.ToArray();
+            texPropList.Clear();
+            texPropList = null;
 
             nodes = new Node[mapFile.nodes.Length];
             leaves = new Leaf[mapFile.leaves.Length];
@@ -1181,6 +1277,7 @@ namespace CopperSource
             //lightmapTextures = lightmapList.ToArray();
             lightmapAtlas = new LightmapAtlas(GraphicsDevice, lightmapList, mapFile.lightmapData);
             lightmapList.Clear();
+            lightmapList = null;
 
             // adjust lightmap uvs for lightmap atlas
             for (int i = 0; i < mapFaces.Length; i++)
@@ -1188,9 +1285,6 @@ namespace CopperSource
                 Face face = mapFaces[i];
                 CalcFaceLightmapUVs(face);
             }
-
-            textures = texList.ToArray();
-            texList.Clear();
 
             Console.WriteLine(textures.Length + " textures loaded");
 
@@ -1249,6 +1343,12 @@ namespace CopperSource
             return uv;
         }
 
+        // ehh
+        Vector2 GetLightmapUV(Vector2 uv, int lightmapID)
+        {
+            return (uv + lightmapAtlas.uvs[lightmapID].min) / new Vector2(lightmapAtlas.atlasSize);
+        }
+
         void CalcFaceLightmapUVs(Face face)
         {
             if (face.lightmapID != -1)
@@ -1282,9 +1382,8 @@ namespace CopperSource
                     int vertexIndex = face.baseVertex + j;
                     WorldVertex vertex = vertList[vertexIndex];
                     Vector2 luv = vertex.LightmapCoordinate;
-                    //
+                    
                     luv -= minUV;
-                    //vertex.LightmapCoordinate -= properMinUV;
                     luv /= new Vector2(lightmapAtlas.atlasSize * 16, lightmapAtlas.atlasSize * 16);
                     luv += lightmapAtlas.uvs[face.lightmapID].min;
 
@@ -1341,8 +1440,8 @@ namespace CopperSource
 
             mf.textureID = texIndex;
 
-            float texWidth = texList[texIndex].Width;
-            float texHeight = texList[texIndex].Height;
+            float texWidth = textures[texIndex].Width;
+            float texHeight = textures[texIndex].Height;
 
             Vector3 normal = mapFile.planes[face.plane].Normal;
             mf.plane = mapFile.planes[face.plane];
@@ -1400,8 +1499,23 @@ namespace CopperSource
             int lightmapTexIndex = -1;
             if (mapFile.lightmapData != null)
             {
+                int styleCount = 0;
+
+                for (int j = 0; j < face.lightStyles.Length; j++)
+                {
+                    if (face.lightStyles[j] == 255)
+                        break;
+                    styleCount++;
+                }
+
                 if (face.lightmapOffset != -1)
+                {
                     lightmapTexIndex = CreateLightmapTexture(face.lightmapOffset, lightMapWidth, lightMapHeight);
+                    //if (styleCount >= 2)
+                    //    lightmapTexIndex = CreateLightmapTexture(face.lightmapOffset + (lightMapWidth * lightMapHeight), lightMapWidth, lightMapHeight);
+                }
+
+
             }
             mf.lightmapID = lightmapTexIndex;
 
@@ -1840,6 +1954,7 @@ namespace CopperSource
                 //GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
                 Texture2D texture = textures[group.texture];
+                TextureProperties properties = textureProperties[group.texture];
 
                 //if (texture.Tag != null && ((string)texture.Tag).StartsWith("GLASS_"))
                 //{
@@ -1866,7 +1981,11 @@ namespace CopperSource
                 {
                     lightmapWorldEffect.World = transform;
                     lightmapWorldEffect.DiffuseTexture = texture;
-                    //lightmapWorldEffect.LightmapEnabled = true;
+                    // incorrect
+                    //if (properties.light)
+                    //    lightmapWorldEffect.LightmapEnabled = false;
+                    //else
+                    //    lightmapWorldEffect.LightmapEnabled = true;
                     lightmapWorldEffect.LightmapTexture = lightmapAtlas.texture;
                     lightmapPass.Apply();
                 }
@@ -1931,7 +2050,7 @@ namespace CopperSource
                     GraphicsDevice.BlendState = BlendState.Opaque;
                     GraphicsDevice.DepthStencilState = DepthStencilState.Default;
 
-                    //lightmapWorldEffect.LightmapEnabled = true;
+                    lightmapWorldEffect.LightmapEnabled = true;
 
                     if (entry.renderMode == RenderMode.Dither_EXT)
                     {
@@ -1942,7 +2061,7 @@ namespace CopperSource
                     {
                         GraphicsDevice.DepthStencilState = DepthStencilState.DepthRead;
                         GraphicsDevice.BlendState = BlendState.Additive;
-                        //lightmapWorldEffect.LightmapEnabled = false;
+                        lightmapWorldEffect.LightmapEnabled = false;
                     }
                 }
 
@@ -2121,15 +2240,14 @@ namespace CopperSource
             timerOffsetOdd = !timerOffsetOdd;
         }
 
-        /// <summary>
-        /// This is called when the game should draw itself.
-        /// </summary>
-        /// <param name="gameTime">Provides a snapshot of timing values.</param>
+        bool ditherOdd = false;
         protected override void Draw(GameTime gameTime)
         {
             //drawTimer.Reset();
             //drawTimer.Start();
             drawTimer.Restart();
+
+            ditherOdd = !ditherOdd;
 
             if (refreshSSRT && preferSuperSampling)
             {
@@ -2144,11 +2262,13 @@ namespace CopperSource
 
             GraphicsDevice.Clear(Color.Black);
 
+            int ditherOffset = (ditherOdd && doDitherFlip) ? 1 : 0;
+
             spriteBatch.Begin(SpriteSortMode.Immediate, BlendState.Opaque, SamplerState.PointWrap, ditherCreateDSS, null, alphaTestEffect);
             spriteBatch.Draw(stencilMask,
                 new Rectangle(0, 0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height),
-                new Rectangle(0, 0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height),
-                Color.White);
+                new Rectangle(ditherOffset, 0, GraphicsDevice.Viewport.Width, GraphicsDevice.Viewport.Height),
+                Color.White, 0f, Vector2.Zero, SpriteEffects.None, 0f);
             spriteBatch.End();
 
             if (overdrawView)

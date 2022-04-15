@@ -108,7 +108,9 @@ namespace CopperSource
 
             public ushort textureInfo;      // Index of the texture info structure
 
-            public uint styles;
+            // 4
+            public byte[] lightStyles;
+            //public uint styles;
             //public byte lightType;
             //public byte baseLight;
             //public byte style1;
@@ -570,7 +572,11 @@ namespace CopperSource
                 faces[i].firstEdge = reader.ReadUInt32();
                 faces[i].nEdges = reader.ReadUInt16();
                 faces[i].textureInfo = reader.ReadUInt16();
-                faces[i].styles = reader.ReadUInt32();
+                faces[i].lightStyles = new byte[4];
+                faces[i].lightStyles[0] = reader.ReadByte();
+                faces[i].lightStyles[1] = reader.ReadByte();
+                faces[i].lightStyles[2] = reader.ReadByte();
+                faces[i].lightStyles[3] = reader.ReadByte();
                 faces[i].lightmapOffset = reader.ReadInt32();
             }
         }

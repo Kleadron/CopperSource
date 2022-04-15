@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("CopperSource Game Engine")]
+[assembly: AssemblyTitle("KSoft Copper")]
 [assembly: AssemblyProduct("Game Engine")]
 [assembly: AssemblyDescription("An XNA-based game engine using 90s techniques")]
 [assembly: AssemblyCompany("Kleadron Software (KSoft)")]

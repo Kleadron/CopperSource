@@ -18,7 +18,7 @@ namespace CopperSource.Objects
         BoundingBox bb;
         RenderMode renderMode;
         Color renderColor = Color.White;
-        byte renderFXAmount;
+        float renderFXAmount;
 
         public override void SetKeyValue(string key, string value)
         {
@@ -55,7 +55,7 @@ namespace CopperSource.Objects
 
             if (key == "renderamt")
             {
-                renderFXAmount = byte.Parse(value);
+                renderFXAmount = float.Parse(value) / 255f;
             }
 
             base.SetKeyValue(key, value);
@@ -79,7 +79,12 @@ namespace CopperSource.Objects
                 //game.DrawBspModel(model, Matrix.CreateTranslation(position));
                 if (position != Vector3.Zero || renderMode == RenderMode.Dither_EXT || renderMode == RenderMode.Additive)
                 {
-                    engine.QueueDynamicBspModel(model, Matrix.CreateTranslation(position), renderMode, renderColor);
+                    Color color = renderColor;
+                    if (renderMode == RenderMode.Additive)
+                    {
+                        color *= renderFXAmount;
+                    }
+                    engine.QueueDynamicBspModel(model, Matrix.CreateTranslation(position), renderMode, color);
                 }
                 else
                 {

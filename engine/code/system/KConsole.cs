@@ -18,6 +18,7 @@ namespace CopperSource
 
         const int MAX_LOG_HISTORY = 32;
         const int MAX_COMMAND_HISTORY = 32;
+        const bool LOG_TO_CMD = true;
 
         static List<LogEntry> logEntries = new List<LogEntry>();
         //static List<LogEntry> removeList = new List<LogEntry>();
@@ -52,6 +53,13 @@ namespace CopperSource
             entry.text = s;
             entry.timeLeft = 10f;
             logEntries.Add(entry);
+
+            if (LOG_TO_CMD)
+            {
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.WriteLine("[KConsole] " + s);
+                Console.ResetColor();
+            }
         }
 
         public static void Update()
