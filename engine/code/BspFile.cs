@@ -20,15 +20,15 @@ namespace CopperSource
         public const uint LUMP_VISIBILITY = 4;
         public const uint LUMP_NODES = 5;
         public const uint LUMP_TEXTURE_INFO = 6;
-        public const uint LUMP_FACES = 7;
+        public const uint LUMP_SURFACES = 7;            // old name: LUMP_FACES
         public const uint LUMP_LIGHTING = 8;
         public const uint LUMP_CLIP_NODES = 9;
         public const uint LUMP_LEAVES = 10;
-        public const uint LUMP_MARKSURFACE = 11;
+        public const uint LUMP_LEAF_SURFACES = 11;      // old name: LUMP_MARKSURFACES
         public const uint LUMP_EDGES = 12;
         public const uint LUMP_SURFACE_EDGES = 13;
         public const uint LUMP_MODELS = 14;
-        public const uint LUMPS_COUNT = 15;
+        public const uint TOTAL_LUMPS = 15;
 
         public const uint VERSION_QUAKE = 29;
         public const uint VERSION_GOLDSRC = 30;
@@ -98,13 +98,13 @@ namespace CopperSource
             public uint nFlags;  // Texture flags, seem to always be 0
         }
 
-        public struct Face
+        public struct Surface
         {
             public ushort plane;       // Plane the face is parallel to
             public ushort planeSide;             // Set if different normals orientation
 
-            public uint firstEdge;          // Index of the first surfedge
-            public ushort nEdges;         // Number of consecutive surfedges
+            public uint firstSurfaceEdge;          // Index of the first surfedge
+            public ushort surfaceEdgeCount;         // Number of consecutive surfedges
 
             public ushort textureInfo;      // Index of the texture info structure
 
@@ -130,13 +130,13 @@ namespace CopperSource
         {
             public int contents;           // ?
 
-            public int visOffset;          // -1 for cluster indicates no visibility information
+            public int visCluster;          // -1 for cluster indicates no visibility information
             //ushort area;                  // ?
 
             public short minX, minY, minZ;  // bounding box minimums
             public short maxX, maxY, maxZ;  // bounding box maximums
 
-            public ushort firstMarkSurface, nMarkSurfaces; // Index and count into marksurfaces array
+            public ushort firstLeafSurface, leafSurfaceCount; // Index and count into marksurfaces array
 
             public uint ambientLevels;      // Ambient sound levels
 
@@ -155,7 +155,7 @@ namespace CopperSource
                 node3, // the second clip node
                 node4; // apparently usually empty
             public int visleafs;
-            public int firstFace, nFaces;
+            public int firstFace, faceCount;
 
             //public const uint ByteSize = sizeof(float) * 6 + sizeof(int) * 4 + sizeof(int) + sizeof(int) * 2;
             //public const uint ByteSize = sizeof(MapModel);
@@ -179,147 +179,57 @@ namespace CopperSource
         public Node[] nodes;
         public TextureInfo[] textureInfos;
         public Plane[] planes;
-        public Face[] faces;
+        public Surface[] surfaces;
         public byte[] lightmapData;
         public Leaf[] leaves;
-        public ushort[] markSurfaces;
+        public ushort[] leafFaces;
         public Edge[] edges;
         public int[] surfaceEdges;
         public MapModel[] models;
 
         public BspFile(string path)
         {
-            Console.WriteLine("Loading BSP " + path);
+            Console.WriteLine("Reading BSP " + path);
 
-            Stream fs = TitleContainer.OpenStream(path);
+            FileStream fs = File.OpenRead(path);
             BinaryReader reader = new BinaryReader(fs);
 
-            Console.WriteLine("Read Header");
+            //Console.WriteLine("Read Header");
             ReadHeader(reader);
-            Console.WriteLine("Read Entities");
+            //Console.WriteLine("Read Entities");
             ReadEntities(reader);
-            Console.WriteLine("Read Planes");
+            //Console.WriteLine("Read Planes");
             ReadPlanes(reader);
-            Console.WriteLine("Read Textures");
+            //Console.WriteLine("Read Textures");
             ReadTextures(reader);
-            Console.WriteLine("Read Vertices");
+            //Console.WriteLine("Read Vertices");
             ReadVertices(reader);
-            Console.WriteLine("Read Visibility");
+            //Console.WriteLine("Read Visibility");
             ReadVisibility(reader);
-            Console.WriteLine("Read Nodes");
+            //Console.WriteLine("Read Nodes");
             ReadNodes(reader);
-            Console.WriteLine("Read Texture Info");
+            //Console.WriteLine("Read Texture Info");
             ReadTextureInfo(reader);
-            Console.WriteLine("Read Faces");
-            ReadFaces(reader);
-            Console.WriteLine("Read Lightmaps");
+            //Console.WriteLine("Read Surfaces");
+            ReadSurfaces(reader);
+            //Console.WriteLine("Read Lightmaps");
             ReadLightmaps(reader);
-            Console.WriteLine("Read Leaves");
+            //Console.WriteLine("Read Leaves");
             ReadLeaves(reader);
-            Console.WriteLine("Read MarkSurfaces");
-            ReadMarkSurfaces(reader);
-            Console.WriteLine("Read Edges");
+            //Console.WriteLine("Read Leaf Faces");
+            ReadLeafFaces(reader);
+            //Console.WriteLine("Read Edges");
             ReadEdges(reader);
-            Console.WriteLine("Read SurfaceEdges");
+            //Console.WriteLine("Read Surface Edges");
             ReadSurfaceEdges(reader);
-            Console.WriteLine("Read Models");
+            //Console.WriteLine("Read Models");
             ReadModels(reader);
 
             reader.Close();
+            fs.Close();
 
-            Console.WriteLine("Done loading BSP");
-            // build map model
-            //BuildVisualData();
+            Console.WriteLine("Done reading BSP");
         }
-
-        //void BuildVisualData()
-        //{
-        //    if (vb != null)
-        //        vb.Dispose();
-
-        //    //Random rand = new Random();
-
-        //    List<VertexPositionNormalTexture> v = new List<VertexPositionNormalTexture>();
-        //    List<Vector3> points = new List<Vector3>();
-
-        //    Vector3[] physVert;
-        //    int[] physInd;
-
-        //    for (int i = models[0].firstFace; i < models[0].totalFaces; i++)
-        //    {
-        //        Vector3 normal = planes[faces[i].planeIndex].Normal;
-
-        //        if (faces[i].side != 0)
-        //            normal *= -1f;
-
-        //        uint edgeIndex = faces[i].firstSurfEdge;
-        //        for (int j = 0; j < faces[i].totalSurfEdges; j++)
-        //        {
-        //            int surfEdge = surfaceEdges[edgeIndex + j];
-        //            Edge edge = edges[Math.Abs(surfEdge)];
-
-        //            int index = surfEdge >= 0 ? edge.v1 : edge.v2;
-        //            points.Add(vertices[index]);
-        //        }
-
-        //        // convert to triangles
-        //        Vector3 p0 = points[0];
-        //        for (int k = 2; k < points.Count; k++)
-        //        {
-        //            //Color color = new Color((float)rand.NextDouble(), (float)rand.NextDouble(), (float)rand.NextDouble());
-
-        //            v.Add(new VertexPositionNormalTexture(p0, normal, Vector2.Zero));
-        //            v.Add(new VertexPositionNormalTexture(points[k - 1], normal, Vector2.Zero));
-        //            v.Add(new VertexPositionNormalTexture(points[k], normal, Vector2.Zero));
-        //        }
-
-        //        points.Clear();
-        //    }
-
-        //    physVert = new Vector3[v.Count];
-        //    physInd = new int[v.Count];
-
-        //    for (int i = 0; i < v.Count; i++)
-        //    {
-        //        physVert[i] = v[i].Position;
-        //        physInd[i] = i;
-        //    }
-
-        //    StaticMesh mesh = new StaticMesh(physVert, physInd);
-        //    game.space.Add(mesh);
-
-        //    vb = new VertexBuffer(game.GraphicsDevice, VertexPositionNormalTexture.VertexDeclaration, v.Count, BufferUsage.WriteOnly);
-        //    vb.SetData(v.ToArray());
-
-        //    v.Clear();
-        //    //VertexPositionColor[] v = new VertexPositionColor[edges.Length * 2];
-
-        //    //int index = 0;
-        //    //for (int i = 0; i < edges.Length; i++)
-        //    //{
-        //    //    v[index].Position = vertices[edges[i].v1];
-        //    //    v[index].Color = Color.White;
-        //    //    index++;
-        //    //    v[index].Position = vertices[edges[i].v2];
-        //    //    v[index].Color = Color.White;
-        //    //    index++;
-        //    //}
-
-        //    //vb.SetData(v);
-        //}
-
-        //public void Draw(Matrix view, Matrix projection)
-        //{
-        //    effect.World = Matrix.Identity;
-        //    effect.View = view;
-        //    effect.Projection = projection;
-        //    effect.CurrentTechnique.Passes[0].Apply();
-
-        //    game.GraphicsDevice.SetVertexBuffer(vb);
-        //    game.GraphicsDevice.DrawPrimitives(PrimitiveType.TriangleList, 0, vb.VertexCount / 3);
-        //    game.GraphicsDevice.SetVertexBuffer(null);
-        //    game.GraphicsDevice.DrawUserPrimitives(PrimitiveType.TriangleList, vertices, 0, vertices.Length / 3);
-        //}
 
         void ReadHeader(BinaryReader reader)
         {
@@ -332,8 +242,8 @@ namespace CopperSource
             }
 
             // Read lumps
-            header.lumps = new Lump[LUMPS_COUNT];
-            for (int i = 0; i < LUMPS_COUNT; i++)
+            header.lumps = new Lump[TOTAL_LUMPS];
+            for (int i = 0; i < TOTAL_LUMPS; i++)
             {
                 header.lumps[i].offset = reader.ReadUInt32();
                 header.lumps[i].length = reader.ReadUInt32();
@@ -487,6 +397,8 @@ namespace CopperSource
                 uint mip2 = reader.ReadUInt32();
                 uint mip3 = reader.ReadUInt32();
 
+                textures[i].mipData = new byte[4][];
+
                 if (textures[i].width > 4096 || textures[i].height > 4096)
                 {
                     Console.WriteLine("Texture size too big! " + namestring + " " + textures[i].width + "x" + textures[i].height);
@@ -496,22 +408,22 @@ namespace CopperSource
                 if (mip0 != 0)
                 {
                     reader.BaseStream.Position = baseMiptexPosition + mip0;
-                    textures[i].mip0data = ReadTextureData(reader, textures[i].width, textures[i].height);
+                    textures[i].mipData[0] = ReadTextureData(reader, textures[i].width, textures[i].height);
                 }
                 if (mip1 != 0)
                 {
                     reader.BaseStream.Position = baseMiptexPosition + mip1;
-                    textures[i].mip1data = ReadTextureData(reader, textures[i].width / 2, textures[i].height / 2);
+                    textures[i].mipData[1] = ReadTextureData(reader, textures[i].width / 2, textures[i].height / 2);
                 }
                 if (mip2 != 0)
                 {
                     reader.BaseStream.Position = baseMiptexPosition + mip2;
-                    textures[i].mip2data = ReadTextureData(reader, textures[i].width / 4, textures[i].height / 4);
+                    textures[i].mipData[2] = ReadTextureData(reader, textures[i].width / 4, textures[i].height / 4);
                 }
                 if (mip3 != 0)
                 {
                     reader.BaseStream.Position = baseMiptexPosition + mip3;
-                    textures[i].mip3data = ReadTextureData(reader, textures[i].width / 8, textures[i].height / 8);
+                    textures[i].mipData[3] = ReadTextureData(reader, textures[i].width / 8, textures[i].height / 8);
                 }
 
                 if (mip0 != 0 || mip1 != 0 || mip2 != 0 || mip3 != 0)
@@ -557,27 +469,27 @@ namespace CopperSource
             return palette;
         }
 
-        void ReadFaces(BinaryReader reader)
+        void ReadSurfaces(BinaryReader reader)
         {
-            reader.BaseStream.Position = header.lumps[LUMP_FACES].offset;
-            uint totalFaces = header.lumps[LUMP_FACES].length / 20u;
+            reader.BaseStream.Position = header.lumps[LUMP_SURFACES].offset;
+            uint totalFaces = header.lumps[LUMP_SURFACES].length / 20u;
 
             //int faceSize = System.Runtime.InteropServices.Marshal.SizeOf(typeof(Face));
 
-            faces = new Face[totalFaces];
+            surfaces = new Surface[totalFaces];
             for (int i = 0; i < totalFaces; i++)
             {
-                faces[i].plane = reader.ReadUInt16();
-                faces[i].planeSide = reader.ReadUInt16();
-                faces[i].firstEdge = reader.ReadUInt32();
-                faces[i].nEdges = reader.ReadUInt16();
-                faces[i].textureInfo = reader.ReadUInt16();
-                faces[i].lightStyles = new byte[4];
-                faces[i].lightStyles[0] = reader.ReadByte();
-                faces[i].lightStyles[1] = reader.ReadByte();
-                faces[i].lightStyles[2] = reader.ReadByte();
-                faces[i].lightStyles[3] = reader.ReadByte();
-                faces[i].lightmapOffset = reader.ReadInt32();
+                surfaces[i].plane = reader.ReadUInt16();
+                surfaces[i].planeSide = reader.ReadUInt16();
+                surfaces[i].firstSurfaceEdge = reader.ReadUInt32();
+                surfaces[i].surfaceEdgeCount = reader.ReadUInt16();
+                surfaces[i].textureInfo = reader.ReadUInt16();
+                surfaces[i].lightStyles = new byte[4];
+                surfaces[i].lightStyles[0] = reader.ReadByte();
+                surfaces[i].lightStyles[1] = reader.ReadByte();
+                surfaces[i].lightStyles[2] = reader.ReadByte();
+                surfaces[i].lightStyles[3] = reader.ReadByte();
+                surfaces[i].lightmapOffset = reader.ReadInt32();
             }
         }
 
@@ -611,7 +523,7 @@ namespace CopperSource
             {
                 leaves[i].contents = reader.ReadInt32();
 
-                leaves[i].visOffset = reader.ReadInt32();
+                leaves[i].visCluster = reader.ReadInt32();
 
                 leaves[i].minX = reader.ReadInt16();
                 leaves[i].minY = reader.ReadInt16();
@@ -621,24 +533,24 @@ namespace CopperSource
                 leaves[i].maxY = reader.ReadInt16();
                 leaves[i].maxZ = reader.ReadInt16();
 
-                leaves[i].firstMarkSurface = reader.ReadUInt16();
-                leaves[i].nMarkSurfaces = reader.ReadUInt16();
+                leaves[i].firstLeafSurface = reader.ReadUInt16();
+                leaves[i].leafSurfaceCount = reader.ReadUInt16();
 
                 leaves[i].ambientLevels = reader.ReadUInt32();
             }
 
         }
 
-        void ReadMarkSurfaces(BinaryReader reader)
+        void ReadLeafFaces(BinaryReader reader)
         {
-            reader.BaseStream.Position = header.lumps[LUMP_MARKSURFACE].offset;
+            reader.BaseStream.Position = header.lumps[LUMP_LEAF_SURFACES].offset;
 
-            uint totalMarkSurfaces = header.lumps[LUMP_MARKSURFACE].length / sizeof(ushort);
+            uint totalLeafFaces = header.lumps[LUMP_LEAF_SURFACES].length / sizeof(ushort);
 
-            markSurfaces = new ushort[totalMarkSurfaces];
-            for (int i = 0; i < totalMarkSurfaces; i++)
+            leafFaces = new ushort[totalLeafFaces];
+            for (int i = 0; i < totalLeafFaces; i++)
             {
-                markSurfaces[i] = reader.ReadUInt16();
+                leafFaces[i] = reader.ReadUInt16();
             }
         }
 
@@ -779,7 +691,7 @@ namespace CopperSource
 
                 models[i].visleafs = reader.ReadInt32();
                 models[i].firstFace = reader.ReadInt32();
-                models[i].nFaces = reader.ReadInt32();
+                models[i].faceCount = reader.ReadInt32();
             }
         }
     }

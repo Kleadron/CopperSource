@@ -10,10 +10,7 @@ namespace CopperSource
     {
         public string name;
         public int width, height;
-        public byte[] mip0data;
-        public byte[] mip1data;
-        public byte[] mip2data;
-        public byte[] mip3data;
+        public byte[][] mipData;
         public Color[] colorPalette;
     }
 }

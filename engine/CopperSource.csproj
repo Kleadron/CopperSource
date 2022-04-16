@@ -112,6 +112,7 @@
   <ItemGroup>
     <Compile Include="code\BspModel.cs" />
     <Compile Include="code\DataDomain.cs" />
+    <Compile Include="code\Entities\Component.cs" />
     <Compile Include="code\QoiSharp\Codec\Channels.cs" />
     <Compile Include="code\QoiSharp\Codec\ColorSpace.cs" />
     <Compile Include="code\QoiSharp\Codec\QoiCodec.cs" />
@@ -127,18 +128,18 @@
     <Compile Include="code\IEntityReader.cs" />
     <Compile Include="code\MipTexture.cs" />
     <Compile Include="code\MipTextureProperties.cs" />
-    <Compile Include="code\Objects\BrushEntity.cs" />
-    <Compile Include="code\Objects\BrushEntityDoor.cs" />
-    <Compile Include="code\Objects\Entity.cs" />
+    <Compile Include="code\Entities\BrushEntity.cs" />
+    <Compile Include="code\Entities\BrushEntityDoor.cs" />
+    <Compile Include="code\Entities\Entity.cs" />
     <Compile Include="code\Extensions.cs" />
     <Compile Include="code\BspFile.cs" />
     <Compile Include="code\Leaf.cs" />
     <Compile Include="code\LightmapAtlas.cs" />
     <Compile Include="code\LightmapEffect.cs" />
-    <Compile Include="code\Face.cs" />
+    <Compile Include="code\Surface.cs" />
     <Compile Include="code\Node.cs" />
-    <Compile Include="code\Objects\EntityClassnameAttribute.cs" />
-    <Compile Include="code\Objects\EntityWorldspawn.cs" />
+    <Compile Include="code\Entities\EntityClassnameAttribute.cs" />
+    <Compile Include="code\Entities\EntityWorldspawn.cs" />
     <Compile Include="code\RenderMode.cs" />
     <Compile Include="code\TextureProperties.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -152,6 +153,9 @@
   <ItemGroup>
     <Content Include="Game.ico" />
     <Content Include="GameThumbnail.png" />
+    <Content Include="paths.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup>
     <BootstrapperPackage Include=".NETFramework,Version=v4.0,Profile=Client">

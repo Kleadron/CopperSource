@@ -187,25 +187,27 @@ namespace CopperSource
                 return miptex;
             }
 
+            miptex.mipData = new byte[MIPLEVELS][];
+
             if (mip0 != 0)
             {
                 reader.BaseStream.Position = baseMiptexPosition + mip0;
-                miptex.mip0data = ReadTextureData(reader, miptex.width, miptex.height);
+                miptex.mipData[0] = ReadTextureData(reader, miptex.width, miptex.height);
             }
             if (mip1 != 0)
             {
                 reader.BaseStream.Position = baseMiptexPosition + mip1;
-                miptex.mip1data = ReadTextureData(reader, miptex.width / 2, miptex.height / 2);
+                miptex.mipData[1] = ReadTextureData(reader, miptex.width / 2, miptex.height / 2);
             }
             if (mip2 != 0)
             {
                 reader.BaseStream.Position = baseMiptexPosition + mip2;
-                miptex.mip2data = ReadTextureData(reader, miptex.width / 4, miptex.height / 4);
+                miptex.mipData[2] = ReadTextureData(reader, miptex.width / 4, miptex.height / 4);
             }
             if (mip3 != 0)
             {
                 reader.BaseStream.Position = baseMiptexPosition + mip3;
-                miptex.mip3data = ReadTextureData(reader, miptex.width / 8, miptex.height / 8);
+                miptex.mipData[3] = ReadTextureData(reader, miptex.width / 8, miptex.height / 8);
             }
 
             if (mip0 != 0 || mip1 != 0 || mip2 != 0 || mip3 != 0)

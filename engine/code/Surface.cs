@@ -7,19 +7,19 @@ using Microsoft.Xna.Framework;
 
 namespace CopperSource
 {
-    public enum FaceType
+    public enum SurfaceRenderType
     {
         Solid,
         DontDraw
     }
 
-    public class Face
+    public class Surface
     {
         public int id;
         public int textureID;
         public int lightmapID;
         public Plane plane;
-        public FaceType type;
+        public SurfaceRenderType type;
         public int start, baseVertex, numVerts, triCount;
         public int indicesStart, indicesLength;
     }

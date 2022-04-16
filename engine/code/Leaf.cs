@@ -12,7 +12,7 @@ namespace CopperSource
         public int modelID;
         public Node parentNode;
         public BoundingBox bb;
-        public int firstMarkSurface, nMarkSurfaces;
+        public int firstLeafFace, leafFaceCount;
         public int visCluster;
     }
 }

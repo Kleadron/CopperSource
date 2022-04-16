@@ -33,7 +33,7 @@ namespace CopperSource
         BoundingBox visBox;
         void CalcVisBox()
         {
-            visBox = new BoundingBox(Vector3.One * short.MaxValue, Vector3.One * short.MinValue);
+            visBox = new BoundingBox(Vector3.One * float.MaxValue, Vector3.One * float.MinValue);
             for (int i = 0; i < leaves.Length; i++)
             {
                 if (leafVisList[i] && leaves[i] != null && leaves[i].modelID == 0)
@@ -92,7 +92,7 @@ namespace CopperSource
         public List<WorldVertex> vertList = new List<WorldVertex>();
         public List<int> indexList = new List<int>();
 
-        Face[] mapFaces;
+        Surface[] surfaces;
         Dictionary<string, List<int>> textureNameToID = new Dictionary<string,List<int>>();
         List<Texture2D> texList = new List<Texture2D>();
         List<TextureProperties> texPropList = new List<TextureProperties>();
@@ -105,7 +105,7 @@ namespace CopperSource
         LightmapAtlas lightmapAtlas;
         List<LMTexEntry> lightmapList = new List<LMTexEntry>();
 
-        Queue<Face>[] textureFaceQueues;
+        Queue<Surface>[] textureFaceQueues;
         int[] indices;
         int[] dynamicIndices;
         int dynamicIndex = 0;
@@ -168,7 +168,7 @@ namespace CopperSource
         public BspModel[] models;
 
         byte[] visData;
-        ushort[] markSurfaces;
+        ushort[] leafFaces;
 
         BoundingFrustum viewFrustum;
         float fov = 75f;
@@ -689,9 +689,9 @@ namespace CopperSource
             leaf.bb = new BoundingBox(new Vector3(mapLeaf.minX, mapLeaf.minY, mapLeaf.minZ),
                 new Vector3(mapLeaf.maxX, mapLeaf.maxY, mapLeaf.maxZ));
 
-            leaf.firstMarkSurface = mapLeaf.firstMarkSurface;
-            leaf.nMarkSurfaces = mapLeaf.nMarkSurfaces;
-            leaf.visCluster = mapLeaf.visOffset;
+            leaf.firstLeafFace = mapLeaf.firstLeafSurface;
+            leaf.leafFaceCount = mapLeaf.leafSurfaceCount;
+            leaf.visCluster = mapLeaf.visCluster;
 
             return leaf;
         }
@@ -887,7 +887,7 @@ namespace CopperSource
 
         Texture2D LoadMipTex(MipTexture miptex)
         {
-            Texture2D tex = new Texture2D(GraphicsDevice, miptex.width, miptex.height, miptex.mip1data != null && enableMipMaps, SurfaceFormat.Color);
+            Texture2D tex = new Texture2D(GraphicsDevice, miptex.width, miptex.height, miptex.mipData[1] != null && enableMipMaps, SurfaceFormat.Color);
 
             tex.Tag = miptex.name.ToUpper();
 
@@ -900,44 +900,44 @@ namespace CopperSource
             Color[] colors = new Color[miptex.width * miptex.height];
             for (int i = 0; i < colors.Length; i++)
             {
-                colors[i] = miptex.colorPalette[miptex.mip0data[i]];
+                colors[i] = miptex.colorPalette[miptex.mipData[0][i]];
             }
             tex.SetData(0, null, colors, 0, colors.Length);
 
             //int mipcount = tex.LevelCount;
 
-            if (enableMipMaps)
-            {
-                if (miptex.mip1data != null)
-                {
-                    int mip1length = (miptex.width / 2) * (miptex.height / 2);
-                    for (int i = 0; i < mip1length; i++)
-                    {
-                        colors[i] = miptex.colorPalette[miptex.mip1data[i]];
-                    }
-                    tex.SetData(1, null, colors, 0, mip1length);
-                }
+            //if (enableMipMaps)
+            //{
+            //    if (miptex.mip1data != null)
+            //    {
+            //        int mip1length = (miptex.width / 2) * (miptex.height / 2);
+            //        for (int i = 0; i < mip1length; i++)
+            //        {
+            //            colors[i] = miptex.colorPalette[miptex.mip1data[i]];
+            //        }
+            //        tex.SetData(1, null, colors, 0, mip1length);
+            //    }
 
-                if (miptex.mip2data != null)
-                {
-                    int mip2length = (miptex.width / 4) * (miptex.height / 4);
-                    for (int i = 0; i < mip2length; i++)
-                    {
-                        colors[i] = miptex.colorPalette[miptex.mip2data[i]];
-                    }
-                    tex.SetData(2, null, colors, 0, mip2length);
-                }
+            //    if (miptex.mip2data != null)
+            //    {
+            //        int mip2length = (miptex.width / 4) * (miptex.height / 4);
+            //        for (int i = 0; i < mip2length; i++)
+            //        {
+            //            colors[i] = miptex.colorPalette[miptex.mip2data[i]];
+            //        }
+            //        tex.SetData(2, null, colors, 0, mip2length);
+            //    }
 
-                if (miptex.mip3data != null)
-                {
-                    int mip3length = (miptex.width / 8) * (miptex.height / 8);
-                    for (int i = 0; i < mip3length; i++)
-                    {
-                        colors[i] = miptex.colorPalette[miptex.mip3data[i]];
-                    }
-                    tex.SetData(3, null, colors, 0, mip3length);
-                }
-            }
+            //    if (miptex.mip3data != null)
+            //    {
+            //        int mip3length = (miptex.width / 8) * (miptex.height / 8);
+            //        for (int i = 0; i < mip3length; i++)
+            //        {
+            //            colors[i] = miptex.colorPalette[miptex.mip3data[i]];
+            //        }
+            //        tex.SetData(3, null, colors, 0, mip3length);
+            //    }
+            //}
 
             //tex.Name = miptex.name;
 
@@ -1114,8 +1114,8 @@ namespace CopperSource
 
             //textureNameToID = new Dictionary<string, int>();
             
-            mapFaces = new Face[mapFile.faces.Length];
-            faceQueued = new bool[mapFaces.Length];
+            surfaces = new Surface[mapFile.surfaces.Length];
+            faceQueued = new bool[surfaces.Length];
 
             texList.Add(grid);
             textureNameToID["missing"] = new List<int>();
@@ -1165,7 +1165,7 @@ namespace CopperSource
                 }
 
                 //Console.WriteLine(miptex.name);
-                bool embeddedTexture = miptex.mip0data != null;
+                bool embeddedTexture = miptex.mipData[0] != null;
                 bool hasTextureFile = false;//File.Exists(Content.RootDirectory + "/Textures/Maptextures/" + fileName + ".xnb");
 
                 int wadIndex = 0;
@@ -1253,13 +1253,13 @@ namespace CopperSource
                 mdl.id = mI;
 
                 mdl.firstFace = model.firstFace;
-                mdl.numFaces = model.nFaces;
+                mdl.numFaces = model.faceCount;
                 mdl.numLeaves = model.visleafs;
                 mdl.bb = new BoundingBox(model.min, model.max);
                 //mdl.rotationalOrigin = model.origin;
                 mdl.center = model.min + ((mdl.bb.Max - mdl.bb.Min) / 2);
 
-                for (int i = model.firstFace; i < model.firstFace + model.nFaces; i++)
+                for (int i = model.firstFace; i < model.firstFace + model.faceCount; i++)
                 {
                     BuildFace(mapFile, i);
                     // THIS IS THE END OF A FACE GENERATION LOOP. DO NOT PUT STUFF HERE.
@@ -1280,19 +1280,19 @@ namespace CopperSource
             lightmapList = null;
 
             // adjust lightmap uvs for lightmap atlas
-            for (int i = 0; i < mapFaces.Length; i++)
+            for (int i = 0; i < surfaces.Length; i++)
             {
-                Face face = mapFaces[i];
+                Surface face = surfaces[i];
                 CalcFaceLightmapUVs(face);
             }
 
             Console.WriteLine(textures.Length + " textures loaded");
 
-            textureFaceQueues = new Queue<Face>[textures.Length];
+            textureFaceQueues = new Queue<Surface>[textures.Length];
 
             for (int i = 0; i < textureFaceQueues.Length; i++)
             {
-                textureFaceQueues[i] = new Queue<Face>();
+                textureFaceQueues[i] = new Queue<Surface>();
             }
 
             textureGroupQueue = new Queue<RenderGroup>();
@@ -1300,7 +1300,7 @@ namespace CopperSource
             //Console.WriteLine(lightmapTextures.Length + " generated lightmap textures");
             Console.WriteLine(vertList.Count + " generated vertices");
             Console.WriteLine(indexList.Count + " generated indices");
-            Console.WriteLine(mapFaces.Length + " generated faces");
+            Console.WriteLine(surfaces.Length + " generated surfaces");
             Console.WriteLine((indexList.Count / 3) + " generated triangles");
 
             Console.WriteLine(nodes.Length + " total bsp nodes");
@@ -1319,7 +1319,7 @@ namespace CopperSource
             dib = new DynamicIndexBuffer(GraphicsDevice, IndexElementSize.ThirtyTwoBits, dynamicIndices.Length, BufferUsage.WriteOnly);
 
             visData = mapFile.visData;
-            markSurfaces = mapFile.markSurfaces;
+            leafFaces = mapFile.leafFaces;
 
             foreach (Entity entity in entities)
             {
@@ -1349,7 +1349,7 @@ namespace CopperSource
             return (uv + lightmapAtlas.uvs[lightmapID].min) / new Vector2(lightmapAtlas.atlasSize);
         }
 
-        void CalcFaceLightmapUVs(Face face)
+        void CalcFaceLightmapUVs(Surface face)
         {
             if (face.lightmapID != -1)
             {
@@ -1395,7 +1395,7 @@ namespace CopperSource
 
         void BuildFace(BspFile mapFile, int i)
         {
-            BspFile.Face face = mapFile.faces[i];
+            BspFile.Surface face = mapFile.surfaces[i];
 
             BspFile.TextureInfo texinfo = mapFile.textureInfos[face.textureInfo];
             MipTexture miptex;
@@ -1408,13 +1408,13 @@ namespace CopperSource
                 miptex = mapFile.textures[texinfo.iMiptex];
             }
 
-            Face mf = new Face();
+            Surface mf = new Surface();
             //mf.textureName = miptex.name;
             mf.id = i;
-            mapFaces[i] = mf;
+            surfaces[i] = mf;
 
             if (miptex.name == "sky" || miptex.name == "clip" || miptex.name == "aaatrigger")
-                mf.type = FaceType.DontDraw;
+                mf.type = SurfaceRenderType.DontDraw;
 
             int texIndex = 0;
             {
@@ -1455,8 +1455,8 @@ namespace CopperSource
             Vector2 minUV = new Vector2(float.PositiveInfinity, float.PositiveInfinity);
             Vector2 maxUV = new Vector2(float.NegativeInfinity, float.NegativeInfinity);
 
-            uint edgeIndex = face.firstEdge;
-            for (int j = 0; j < face.nEdges; j++)
+            uint edgeIndex = face.firstSurfaceEdge;
+            for (int j = 0; j < face.surfaceEdgeCount; j++)
             {
                 int surfEdge = mapFile.surfaceEdges[edgeIndex + j];
                 BspFile.Edge edge = mapFile.edges[Math.Abs(surfEdge)];
@@ -1720,9 +1720,9 @@ namespace CopperSource
 
         int duplicateFaceQueues = 0;
 
-        void QueueFace(Face face)
+        void QueueFace(Surface face)
         {
-            if (face.type == FaceType.DontDraw)
+            if (face.type == SurfaceRenderType.DontDraw)
                 return;
 
             // For some dumbass reason, leaves can overlap with the faces they contain.
@@ -1787,11 +1787,11 @@ namespace CopperSource
             //if (!canDraw)
             //    return;
 
-            for (int surf = leaf.firstMarkSurface; surf < leaf.firstMarkSurface + leaf.nMarkSurfaces; surf++)
+            for (int surf = leaf.firstLeafFace; surf < leaf.firstLeafFace + leaf.leafFaceCount; surf++)
             {
-                int markSurface = markSurfaces[surf];
+                int markSurface = leafFaces[surf];
 
-                Face face = mapFaces[markSurface];
+                Surface face = surfaces[markSurface];
                 //if (face != null)
                 {
                     //DrawFace(face);
@@ -1911,7 +1911,7 @@ namespace CopperSource
             int numTextures = textures.Length;
             for (int i = 0; i < numTextures; i++)
             {
-                Queue<Face> faceQueue = textureFaceQueues[i];
+                Queue<Surface> faceQueue = textureFaceQueues[i];
 
                 if (faceQueue.Count == 0)
                     continue;
@@ -1922,7 +1922,7 @@ namespace CopperSource
 
                 while (faceQueue.Count > 0)
                 {
-                    Face face = faceQueue.Dequeue();
+                    Surface face = faceQueue.Dequeue();
                     for (int j = 0; j < face.indicesLength; j++)
                     {
                         //if (dynamicIndex < dynamicIndices.Length)

@@ -1,0 +1,3 @@
+# The first entries on this list have the highest priority on file loading.
+ksoft
+E:\Games\Steam\steamapps\common\Half-Life\valve
