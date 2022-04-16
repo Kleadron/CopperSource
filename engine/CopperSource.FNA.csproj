@@ -75,24 +75,37 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="code\BspModel.cs" />
+    <Compile Include="code\DataDomain.cs" />
     <Compile Include="code\DataHelper.cs" />
     <Compile Include="code\EffectHelpers.cs" />
     <Compile Include="code\Engine.cs" />
+    <Compile Include="code\Entities\BrushEntity.cs" />
+    <Compile Include="code\Entities\BrushEntityDoor.cs" />
+    <Compile Include="code\Entities\Component.cs" />
+    <Compile Include="code\Entities\Entity.cs" />
+    <Compile Include="code\Entities\EntityClassnameAttribute.cs" />
+    <Compile Include="code\Entities\EntityWorldspawn.cs" />
     <Compile Include="code\HLFont.cs" />
     <Compile Include="code\IEntityReader.cs" />
     <Compile Include="code\MipTexture.cs" />
-    <Compile Include="code\Objects\BrushEntity.cs" />
-    <Compile Include="code\Objects\BrushEntityDoor.cs" />
-    <Compile Include="code\Objects\Entity.cs" />
     <Compile Include="code\Extensions.cs" />
     <Compile Include="code\BspFile.cs" />
     <Compile Include="code\Leaf.cs" />
     <Compile Include="code\LightmapAtlas.cs" />
     <Compile Include="code\LightmapEffect.cs" />
-    <Compile Include="code\Face.cs" />
+    <Compile Include="code\MipTextureProperties.cs" />
     <Compile Include="code\Node.cs" />
-    <Compile Include="code\Objects\EntityClassnameAttribute.cs" />
-    <Compile Include="code\Objects\EntityWorldspawn.cs" />
+    <Compile Include="code\QoiSharp\Codec\Channels.cs" />
+    <Compile Include="code\QoiSharp\Codec\ColorSpace.cs" />
+    <Compile Include="code\QoiSharp\Codec\QoiCodec.cs" />
+    <Compile Include="code\QoiSharp\Exceptions\QoiDecodingException.cs" />
+    <Compile Include="code\QoiSharp\Exceptions\QoiEncodingException.cs" />
+    <Compile Include="code\QoiSharp\QoiDecoder.cs" />
+    <Compile Include="code\QoiSharp\QoiEncoder.cs" />
+    <Compile Include="code\QoiSharp\QoiImage.cs" />
+    <Compile Include="code\RenderMode.cs" />
+    <Compile Include="code\Surface.cs" />
+    <Compile Include="code\TextureProperties.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="code\Program.cs" />
     <Compile Include="code\system\Input.cs" />
@@ -109,19 +122,10 @@
     </Content>
     <Content Include="Game.ico" />
     <Content Include="GameThumbnail.png" />
-    <Content Include="ksoft\images\ai_detail.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="ksoft\images\Copy of tiledark_s.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="ksoft\images\graypixel.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="ksoft\images\pixel.png">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="ksoft\images\tiledark.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
     <Content Include="ksoft\images\tiledark_s.png">
@@ -155,49 +159,7 @@
     </BootstrapperPackage>
   </ItemGroup>
   <ItemGroup>
-    <Content Include="ksoft\arctica.wad">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
     <Content Include="ksoft\effects\LightmapEffect.fxb">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="ksoft\maps\arctic_incident_1.bsp">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="ksoft\maps\arctic_incident_2.bsp">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="ksoft\maps\Big_City_alpha.bsp">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="ksoft\maps\c1a0.bsp">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="ksoft\cs_dust.wad">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="ksoft\maps\de_aztec.bsp">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="ksoft\maps\de_dust2.bsp">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="ksoft\maps\de_dust2_2020.bsp">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="ksoft\fonts.wad">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="ksoft\gfx.wad">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="ksoft\halflife.wad">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="ksoft\maps\maindemo.bsp">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Content>
-    <Content Include="ksoft\maps\techdemo.bsp">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
@@ -206,26 +168,6 @@
       <Project>{35253CE1-C864-4CD3-8249-4D1319748E8F}</Project>
       <Name>FNA</Name>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="ksoft\loz.wad">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="ksoft\maps\rust_islands.bsp">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="ksoft\maps\rust_legacy.bsp">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="ksoft\maps\rust_mini.bsp">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="ksoft\OPFOR.WAD">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
-    <None Include="ksoft\rust.wad">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
   </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!--
