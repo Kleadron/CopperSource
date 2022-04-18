@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace CopperSource.Objects
+namespace CopperSource.code.Entities
 {
     [AttributeUsage(AttributeTargets.Class)]
     public class EntityClassnameAttribute : Attribute

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.Xna.Framework;
 
-namespace CopperSource.Objects
+namespace CopperSource.code.Entities
 {
     public class Entity
     {
@@ -16,6 +16,28 @@ namespace CopperSource.Objects
         protected Engine engine;
 
         public Vector3 originOffset;
+
+        public int ID { get; set; }
+
+        public List<Component> components = new List<Component>();
+
+        public void AddComponent(Component component)
+        {
+            components.Add(component);
+            component.entity = this;
+        }
+
+        public T GetComponent<T>() where T : Component
+        {
+            foreach (Component component in components)
+            {
+                if (component.GetType().Equals(typeof(T)))
+                {
+                    return (T)component;
+                }
+            }
+            return null;
+        }
         public Vector3 WorldOrigin
         {
             get

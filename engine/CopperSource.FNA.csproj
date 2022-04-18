@@ -79,8 +79,10 @@
     <Compile Include="code\DataHelper.cs" />
     <Compile Include="code\EffectHelpers.cs" />
     <Compile Include="code\Engine.cs" />
+    <Compile Include="code\Entities\BaseSystem.cs" />
     <Compile Include="code\Entities\BrushEntity.cs" />
     <Compile Include="code\Entities\BrushEntityDoor.cs" />
+    <Compile Include="code\Entities\Collider.cs" />
     <Compile Include="code\Entities\Component.cs" />
     <Compile Include="code\Entities\Entity.cs" />
     <Compile Include="code\Entities\EntityClassnameAttribute.cs" />

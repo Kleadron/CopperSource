@@ -11,7 +11,7 @@ using Microsoft.Xna.Framework.Media;
 using System.IO;
 using System.Collections;
 using System.Text;
-using CopperSource.Objects;
+using CopperSource.code.Entities;
 using System.Diagnostics;
 
 namespace CopperSource
@@ -1004,6 +1004,7 @@ namespace CopperSource
             //File.WriteAllText("entities.txt", mapFile.entityData);
 
             int entityLoadIndex = 0;
+            //int entitieswithcollider = 0;
             bool readingEntity = false;
 
             Dictionary<string, string> keyValues = new Dictionary<string, string>();
@@ -1042,6 +1043,7 @@ namespace CopperSource
                     if (keyValues.ContainsKey("model") && keyValues["model"].StartsWith("*"))
                     {
                         ent = new BrushEntity(this);
+                        
                     }
                     else if (keyValues["classname"] == "worldspawn")
                     {
@@ -1079,7 +1081,21 @@ namespace CopperSource
                 }
             }
 
+            //Example of getting a component of one type from all entities.
+
+            /*foreach (Entity entity in entities)
+            {
+                if (entity == null)
+                    continue;
+
+                if (entity.GetComponent<Collider>() != null)
+                {
+                    entitieswithcollider++;
+                }
+            }*/
+
             Console.WriteLine(entityLoadIndex + " entities");
+           // Console.WriteLine(entitieswithcollider + " entities with a Collider Component");
 
             missingTex = new MipTexture();
             missingTex.name = "missing";
@@ -1598,6 +1614,9 @@ namespace CopperSource
             //updateTimer.Reset();
             //updateTimer.Start();
 
+
+            ColliderSystem.Update(gameTime);
+
             updateTimer.Restart();
 
             // Allows the game to exit
@@ -1997,7 +2016,7 @@ namespace CopperSource
 
         int staticModels = 0;
         int dynamicModels = 0;
-
+       
         void DrawBspQueue()
         {
             staticModels = modelQueueStatic.Count;
@@ -2153,26 +2172,27 @@ namespace CopperSource
 
             // ======================== DRAW DRAW DRAW DRAW
 
-            //spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
-            //foreach (Entity entity in entities)
-            //{
-            //    if (entity != null)
-            //    {
-            //        bool isVisible = entity.IsOriginVisible;
+           /* spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
+            foreach (Entity entity in entities)
+            {
+                if (entity != null)
+                {
+                    bool isVisible = entity.IsOriginVisible;
 
-            //        if (!isVisible)
-            //            continue;
+                    if (!isVisible)
+                        continue;
 
-            //        Vector3 screenPosition = GraphicsDevice.Viewport.Project(entity.WorldOrigin, projection, view, Matrix.Identity);
-            //        if (screenPosition.Z >= 0 && screenPosition.Z <= 1)
-            //        {
-            //            spriteBatch.Draw(pixel, new Rectangle((int)screenPosition.X - 8, (int)screenPosition.Y - 8, 16, 16), Color.DarkRed);
-            //            spriteBatch.DrawString(hlFont, entity.classname, (int)screenPosition.X, (int)screenPosition.Y, Color.Red);
-            //        }
-            //    }
-            //}
-            //spriteBatch.End();
 
+                    Vector3 screenPosition = GraphicsDevice.Viewport.Project(entity.WorldOrigin, projection, view, Matrix.Identity);
+                    if (screenPosition.Z >= 0 && screenPosition.Z <= 1)
+                    {
+                        spriteBatch.Draw(pixel, new Rectangle((int)screenPosition.X - 8, (int)screenPosition.Y - 8, 16, 16), Color.DarkRed);
+                        spriteBatch.DrawString(hlFont, entity.classname, (int)screenPosition.X, (int)screenPosition.Y, Color.Red);
+                    }
+                }
+            }
+            spriteBatch.End();
+           */
             if (viewName != null)
             {
                 spriteBatch.Begin(SpriteSortMode.Deferred, BlendState.AlphaBlend, SamplerState.PointClamp, null, null);
@@ -2352,6 +2372,8 @@ namespace CopperSource
             string modelQueueString = "S/D Models: " + staticModels + "/" + dynamicModels;
             DrawDebugLine(modelQueueString, Color.White);
 
+
+           
             //DrawDebugLine("Duplicate Faces: " + duplicateFaceQueues, Color.White);
 
             frameCounter++;

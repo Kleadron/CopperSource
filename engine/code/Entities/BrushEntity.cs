@@ -4,13 +4,16 @@ using System.Linq;
 using System.Text;
 using Microsoft.Xna.Framework;
 
-namespace CopperSource.Objects
+namespace CopperSource.code.Entities
 {
     public class BrushEntity : Entity
     {
         public BrushEntity(Engine engine) : base(engine)
         {
+            // Example of adding a component to a entity
 
+           /* Collider collider = new Collider();
+            AddComponent(collider);*/
         }
 
         int modelIndex;
@@ -19,6 +22,9 @@ namespace CopperSource.Objects
         RenderMode renderMode;
         Color renderColor = Color.White;
         float renderFXAmount;
+
+       
+
 
         public override void SetKeyValue(string key, string value)
         {
