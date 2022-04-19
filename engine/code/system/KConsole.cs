@@ -18,7 +18,7 @@ namespace CopperSource
 
         const int MAX_LOG_HISTORY = 32;
         const int MAX_COMMAND_HISTORY = 32;
-        const bool LOG_TO_CMD = true;
+        const bool LOG_TO_CMD = false;
 
         static List<LogEntry> logEntries = new List<LogEntry>();
         //static List<LogEntry> removeList = new List<LogEntry>();
