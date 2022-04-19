@@ -130,6 +130,9 @@
     <Content Include="ksoft\images\pixel.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
+    <Content Include="ksoft\images\stencilmask_25.png" />
+    <Content Include="ksoft\images\stencilmask_50.png" />
+    <Content Include="ksoft\images\stencilmask_75.png" />
     <Content Include="ksoft\images\tiledark_s.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
