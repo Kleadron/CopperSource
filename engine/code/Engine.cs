@@ -11,7 +11,7 @@ using Microsoft.Xna.Framework.Media;
 using System.IO;
 using System.Collections;
 using System.Text;
-using CopperSource.code.Entities;
+using CopperSource.Entities;
 using System.Diagnostics;
 
 namespace CopperSource

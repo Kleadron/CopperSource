@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using Microsoft.Xna.Framework;
 
-namespace CopperSource.code.Entities
+namespace CopperSource.Entities
 {
     public class Entity
     {
