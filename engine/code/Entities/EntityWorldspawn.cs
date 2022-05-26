@@ -1,28 +1,28 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿//using System;
+//using System.Collections.Generic;
+//using System.Linq;
+//using System.Text;
 
-namespace CopperSource.Entities
-{
-    [EntityClassname("worldspawn")]
-    public class EntityWorldspawn : Entity
-    {
-        public string[] wads;
+//namespace CopperSource.Entities
+//{
+//    [EntityClassname("worldspawn")]
+//    public class EntityWorldspawn : Entity
+//    {
+//        public string[] wads;
 
-        public EntityWorldspawn(Engine game) : base(game)
-        {
+//        public EntityWorldspawn(Engine game) : base(game)
+//        {
 
-        }
+//        }
 
-        public override void SetKeyValue(string key, string value)
-        {
-            if (key == "wad")
-            {
-                wads = value.Split(new char[] {';'}, StringSplitOptions.RemoveEmptyEntries);
-            }
+//        public override void SetKeyValue(string key, string value)
+//        {
+//            if (key == "wad")
+//            {
+//                wads = value.Split(new char[] {';'}, StringSplitOptions.RemoveEmptyEntries);
+//            }
 
-            base.SetKeyValue(key, value);
-        }
-    }
-}
+//            base.SetKeyValue(key, value);
+//        }
+//    }
+//}

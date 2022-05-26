@@ -82,10 +82,16 @@
     <Compile Include="code\Entities\BaseSystem.cs" />
     <Compile Include="code\Entities\BrushEntity.cs" />
     <Compile Include="code\Entities\BrushEntityDoor.cs" />
-    <Compile Include="code\Entities\Collider.cs" />
-    <Compile Include="code\Entities\Component.cs" />
+    <Compile Include="code\Entities\Components\Collider.cs" />
+    <Compile Include="code\Entities\Components\Component.cs" />
+    <Compile Include="code\Entities\Components\BspModelRenderer.cs" />
+    <Compile Include="code\Entities\Components\RenderFX.cs" />
+    <Compile Include="code\Entities\Components\Transform.cs" />
+    <Compile Include="code\Entities\Components\WorldInfo.cs" />
     <Compile Include="code\Entities\Entity.cs" />
+    <Compile Include="code\Entities\EntityBuilder.cs" />
     <Compile Include="code\Entities\EntityClassnameAttribute.cs" />
+    <Compile Include="code\Entities\EntityTemplate.cs" />
     <Compile Include="code\Entities\EntityWorldspawn.cs" />
     <Compile Include="code\HLFont.cs" />
     <Compile Include="code\IEntityReader.cs" />
@@ -174,6 +180,7 @@
       <Name>FNA</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!--
       To modify your build process, add your task inside one of the targets below and uncomment it. 

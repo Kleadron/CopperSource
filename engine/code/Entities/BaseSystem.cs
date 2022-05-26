@@ -6,9 +6,8 @@ using System.Text;
 
 namespace CopperSource.Entities
 {
-    class BaseSystem<T> where T : Component
+    public class BaseSystem<T> where T : Component
     {
-
         public static List<T> components = new List<T>();
 
         public static void Register(T component)
@@ -24,6 +23,15 @@ namespace CopperSource.Entities
             }
         }
 
+        public static void Deregister(T component)
+        {
+            components.Remove(component);
+        }
+
+        public static void Clear()
+        {
+            components.Clear();
+        }
     }
 
 

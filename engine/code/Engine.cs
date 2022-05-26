@@ -13,6 +13,7 @@ using System.Collections;
 using System.Text;
 using CopperSource.Entities;
 using System.Diagnostics;
+using CopperSource.Entities.Components;
 
 namespace CopperSource
 {
@@ -216,8 +217,11 @@ namespace CopperSource
 #endif
         }
 
+        public static Engine I;
+
         public Engine()
         {
+            I = this;
             //Vector3 v = DataHelper.ValueToVector3("3.0 4.1 333");
             Console.Title = "KSoft Copper Console";
             Console.ForegroundColor = ConsoleColor.Yellow;
@@ -950,6 +954,11 @@ namespace CopperSource
             return tex;
         }
 
+        void LoadEntity(Dictionary<string, string> keyValues)
+        {
+
+        }
+
         /// <summary>
         /// LoadContent will be called once per game and is the place to load
         /// all of your content.
@@ -1040,24 +1049,8 @@ namespace CopperSource
                     //    continue;
                     //}
 
-                    if (keyValues.ContainsKey("model") && keyValues["model"].StartsWith("*"))
-                    {
-                        ent = new BrushEntity(this);
-                        
-                    }
-                    else if (keyValues["classname"] == "worldspawn")
-                    {
-                        ent = new EntityWorldspawn(this);
-                    }
-                    else
-                    {
-                        ent = new Entity(this);
-                    }
-
-                    foreach (KeyValuePair<string, string> pair in keyValues)
-                    {
-                        ent.SetKeyValue(pair.Key, pair.Value);
-                    }
+                    LoadEntity(keyValues);
+                    
                     entities[entityLoadIndex++] = ent;
                     continue;
                 }
@@ -1139,7 +1132,7 @@ namespace CopperSource
 
             texPropList.Add(new TextureProperties());
 
-            EntityWorldspawn worldspawn = GetEntityByType<EntityWorldspawn>();
+            WorldInfo worldspawn = new WorldInfo();//GetEntityByType<EntityWorldspawn>();
 
             int wadCount = 0;
             if (worldspawn.wads != null)
@@ -2160,13 +2153,13 @@ namespace CopperSource
 
             QueueStaticBspModel(models[0], leafVisList);
 
-            for (int i = 0; i < entities.Length; i++)
-            {
-                if (entities[i] != null)
-                {
-                    entities[i].Draw(delta, total);
-                }
-            }
+            //for (int i = 0; i < entities.Length; i++)
+            //{
+            //    if (entities[i] != null)
+            //    {
+            //        entities[i].Draw(delta, total);
+            //    }
+            //}
 
             DrawBspQueue();
 
