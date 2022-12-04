@@ -941,6 +941,20 @@ namespace CopperSource
 
             //tex.Name = miptex.name;
 
+            string texfoldername = "allmiptextures";
+
+            if (false)
+            {
+                if (!Directory.Exists(texfoldername))
+                {
+                    Directory.CreateDirectory(texfoldername);
+                }
+
+                FileStream fs = File.Open(texfoldername + "/" + miptex.name + ".png", FileMode.Create);
+                tex.SaveAsPng(fs, miptex.width, miptex.height);
+                fs.Close();
+            }
+
             return tex;
         }
 
@@ -1615,7 +1629,7 @@ namespace CopperSource
             //updateTimer.Start();
 
 
-            ColliderSystem.Update(gameTime);
+            //ColliderSystem.Update(gameTime);
 
             updateTimer.Restart();
 
