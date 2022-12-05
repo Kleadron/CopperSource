@@ -1374,34 +1374,42 @@ namespace CopperSource
         }
 
         // ehh
-        Vector2 GetLightmapUV(Vector2 uv, int lightmapID)
-        {
-            return (uv + lightmapAtlas.uvs[lightmapID].min) / new Vector2(lightmapAtlas.atlasSize);
-        }
+        //Vector2 GetLightmapUV(Vector2 uv, int lightmapID)
+        //{
+        //    return (uv + lightmapAtlas.uvs[lightmapID].min) / new Vector2(lightmapAtlas.atlasSize);
+        //}
 
         void CalcFaceLightmapUVs(Surface face)
         {
             if (face.lightmapID != -1)
             {
-                Vector2 minUV = new Vector2(float.PositiveInfinity, float.PositiveInfinity);
-                Vector2 maxUV = new Vector2(float.NegativeInfinity, float.NegativeInfinity);
+                //Vector2 minUV = new Vector2(float.PositiveInfinity, float.PositiveInfinity);
+                //Vector2 maxUV = new Vector2(float.NegativeInfinity, float.NegativeInfinity);
 
-                for (int j = 0; j < face.numVerts; j++)
-                {
-                    int vertexIndex = face.baseVertex + j;
-                    WorldVertex vertex = vertList[vertexIndex];
-                    Vector2 uv = vertex.LightmapCoordinate;
+                //for (int j = 0; j < face.numVerts; j++)
+                //{
+                //    int vertexIndex = face.baseVertex + j;
+                //    WorldVertex vertex = vertList[vertexIndex];
+                //    Vector2 uv = vertex.LightmapCoordinate;
 
-                    if (uv.X < minUV.X)
-                        minUV.X = uv.X;
-                    if (uv.Y < minUV.Y)
-                        minUV.Y = uv.Y;
+                //    if (uv.X < minUV.X)
+                //        minUV.X = uv.X;
+                //    if (uv.Y < minUV.Y)
+                //        minUV.Y = uv.Y;
 
-                    if (uv.X > maxUV.X)
-                        maxUV.X = uv.X;
-                    if (uv.Y > maxUV.Y)
-                        maxUV.Y = uv.Y;
-                }
+                //    if (uv.X > maxUV.X)
+                //        maxUV.X = uv.X;
+                //    if (uv.Y > maxUV.Y)
+                //        maxUV.Y = uv.Y;
+                //}
+
+                //minUV.X = (float)Math.Floor(minUV.X / 16f);
+                //minUV.Y = (float)Math.Floor(minUV.Y / 16f);
+                //minUV *= 16f;
+
+                //maxUV.X = (float)Math.Ceiling(maxUV.X / 16f);
+                //maxUV.Y = (float)Math.Ceiling(maxUV.Y / 16f);
+                //maxUV *= 16f;
 
                 //Vector2 properMinUV = new Vector2();
                 //properMinUV.X = (int)(minUV.X / 8f) * 8f;
@@ -1412,8 +1420,9 @@ namespace CopperSource
                     int vertexIndex = face.baseVertex + j;
                     WorldVertex vertex = vertList[vertexIndex];
                     Vector2 luv = vertex.LightmapCoordinate;
-                    
-                    luv -= minUV;
+
+                    //luv -= minUV;
+                    luv += new Vector2(8, 8);
                     luv /= new Vector2(lightmapAtlas.atlasSize * 16, lightmapAtlas.atlasSize * 16);
                     luv += lightmapAtlas.uvs[face.lightmapID].min;
 
@@ -1421,6 +1430,16 @@ namespace CopperSource
                     vertList[vertexIndex] = vertex;
                 }
             }
+        }
+
+        int Modulus(int x, int m)
+        {
+            return (x % m + m) % m;
+        }
+
+        float ModulusF(float x, float m)
+        {
+            return (x % m + m) % m;
         }
 
         void BuildFace(BspFile mapFile, int i)
@@ -1521,10 +1540,30 @@ namespace CopperSource
                 f_luvs.Add(uv);
             }
 
-            Vector2 uvDim = maxUV - minUV;
+            //Vector2 uvDim = maxUV - minUV;
+            int texSizeX = (int)Math.Ceiling(maxUV.X) - (int)Math.Floor(minUV.X);
+            int texSizeY = (int)Math.Ceiling(maxUV.Y) - (int)Math.Floor(minUV.Y);
+            int surfaceTilesX = (int)Math.Ceiling(maxUV.X / 16) - (int)Math.Floor(minUV.X / 16);
+            int surfaceTilesY = (int)Math.Ceiling(maxUV.Y / 16) - (int)Math.Floor(minUV.Y / 16);
+            int lightMapWidth = surfaceTilesX + 1;
+            int lightMapHeight = surfaceTilesY + 1;
 
-            int lightMapWidth = (int)Math.Ceiling(maxUV.X / 16) - (int)Math.Floor(minUV.X / 16) + 1;
-            int lightMapHeight = (int)Math.Ceiling(maxUV.Y / 16) - (int)Math.Floor(minUV.Y / 16) + 1;
+            //Debug.Write("Surf\t" + texSizeX + "x" + texSizeY);
+            //Debug.Write("\tTiles\t" + surfaceTilesX + "x" + surfaceTilesY);
+            //Debug.Write("\tLight\t" + (surfaceTilesX + 1) + "x" + (surfaceTilesY + 1));
+
+            //int modulus = Modulus(-1, 16);
+
+            float anchorX = minUV.X;
+            float anchorY = minUV.Y;
+            float tilePosX = ModulusF(anchorX, 16);
+            float tilePosY = ModulusF(anchorY, 16);
+            float baseLightX = anchorX - tilePosX;
+            float baseLightY = anchorY - tilePosY;
+            //Debug.Write("\tTexPos\t" + anchorX.ToString("0.00") + "x" + anchorY.ToString("0.00"));
+            //Debug.Write("\tTilePos\t" + tilePosX.ToString("0.00") + "x" + tilePosY.ToString("0.00"));
+            //Debug.Write("\n");
+            //Debug.Write("\tLightAnchor\t" + (int)Math.Floor(minUV.X) + "x" + (int)Math.Floor(minUV.Y/16));
 
             int lightmapTexIndex = -1;
             if (mapFile.lightmapData != null)
@@ -1549,26 +1588,11 @@ namespace CopperSource
             }
             mf.lightmapID = lightmapTexIndex;
 
-            //int blockSize = 256;
-
-            Vector2 min16 = new Vector2((int)Math.Floor(minUV.X / 16), (int)Math.Floor(minUV.Y / 16));
-            min16 *= 16;
-            Vector2 diff = minUV - min16;
-
+            
+            // fixes UVs
             for (int j = 0; j < f_uvs.Count; j++)
             {
-                //Vector2 lmUV = (f_luvs[j] - minUV) / uvDim;
-                //Vector2 lmUV = f_luvs[j];
-
-                //lmUV -= minUV;
-
-                //// some half-offset
-                ////lmUV += new Vector2(8);
-                //// use the lightmap atlas size instead when that is added
-                ////lmUV /= new Vector2(lightMapWidth * 16, lightMapHeight * 16);
-                ////lmUV /= new Vector2(LightmapAtlas.PAGE_WIDTH * 16, LightmapAtlas.PAGE_HEIGHT * 16);
-
-                //f_luvs[j] = lmUV;
+                f_luvs[j] = new Vector2(f_luvs[j].X - baseLightX, f_luvs[j].Y - baseLightY);
                 f_uvs[j] = new Vector2(f_uvs[j].X / texWidth, f_uvs[j].Y / texHeight);
             }
 

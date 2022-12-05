@@ -14,6 +14,9 @@ namespace CopperSource
         public int atlasSize = 256;
         public int sizeIncrement = 64;
 
+        const int Padding = 0;
+        const int AxisPad = Padding * 2;
+
         GraphicsDevice device;
         Color[] texData;
 
@@ -46,15 +49,15 @@ namespace CopperSource
             {
                 sizeFits = true;
 
-                rowX = 0;
-                rowY = 0;
+                rowX = Padding;
+                rowY = Padding;
                 tallestTextureThisRow = 0;
 
                 for (int i = 0; i < textures.Count; i++)
                 {
                     LMTexEntry tex = textures[i];
 
-                    if (rowX + tex.width > atlasSize)
+                    if (rowX + tex.width + AxisPad > atlasSize)
                     {
                         bool foundSuitableSize = false;
 
@@ -71,11 +74,11 @@ namespace CopperSource
                         // advance the row
                         if (!foundSuitableSize)
                         {
-                            rowX = 0;
+                            rowX = Padding;
                             rowY += tallestTextureThisRow;
                             tallestTextureThisRow = 0;
 
-                            if (rowY + tex.height > atlasSize)
+                            if (rowY + tex.height + AxisPad > atlasSize)
                             {
                                 //throw new Exception("Too many textures to build Lightmap atlas!");
                                 int nextSize = atlasSize + sizeIncrement;
@@ -96,26 +99,30 @@ namespace CopperSource
                         }
                     }
 
-                    if (tallestTextureThisRow < tex.height)
-                        tallestTextureThisRow = tex.height;
+                    if (tallestTextureThisRow < tex.height + AxisPad)
+                        tallestTextureThisRow = tex.height + AxisPad;
 
-                    rowX += tex.width;
+                    rowX += tex.width + AxisPad;
                 }
             }
 
             // The lightmap data is RGB!
             // The texture's SurfaceFormat is RGBA/Color!
             texData = new Color[atlasSize * atlasSize];
+            for(int i = 0; i < texData.Length; i++)
+            {
+                texData[i] = Color.Magenta;
+            }
 
-            rowX = 0;
-            rowY = 0;
+            rowX = Padding;
+            rowY = Padding;
             tallestTextureThisRow = 0;
 
             for (int i = 0; i < textures.Count; i++)
             {
                 LMTexEntry tex = textures[i];
 
-                if (rowX + tex.width > atlasSize)
+                if (rowX + tex.width + AxisPad > atlasSize)
                 {
                     bool foundSuitableSize = false;
 
@@ -132,7 +139,7 @@ namespace CopperSource
                     // advance the row
                     if (!foundSuitableSize)
                     {
-                        rowX = 0;
+                        rowX = Padding;
                         rowY += tallestTextureThisRow;
                         tallestTextureThisRow = 0;
 
@@ -143,11 +150,11 @@ namespace CopperSource
                     }
                 }
 
-                if (tallestTextureThisRow < tex.height)
-                    tallestTextureThisRow = tex.height;
+                if (tallestTextureThisRow < tex.height + AxisPad)
+                    tallestTextureThisRow = tex.height + AxisPad;
 
                 CopyLightmapData(lightmapData, tex.offset, new Rectangle(rowX, rowY, tex.width, tex.height), tex.id);
-                rowX += tex.width;
+                rowX += tex.width + AxisPad;
             }
 
             texture = new Texture2D(device, atlasSize, atlasSize, false, SurfaceFormat.Color);
@@ -157,7 +164,9 @@ namespace CopperSource
             Console.WriteLine("Lightmap Atlas: Done, " + atlasSize + "x" + atlasSize + " size atlas");
             KConsole.Log("Lightmap atlas is " + atlasSize + "x" + atlasSize);
 
-            //texture.SaveAsPng(File.Open("lightmap.png", FileMode.Create), atlasSize, atlasSize);
+            Stream s = File.Open("lightmap.png", FileMode.Create);
+            texture.SaveAsPng(s, atlasSize, atlasSize);
+            s.Close();
             //texture = Texture2D.FromStream(device, File.Open("jpeg.png", FileMode.Open));
         }
 
@@ -185,24 +194,32 @@ namespace CopperSource
             int width = destination.Width;
             int height = destination.Height;
 
-            uvs[id].min.X = destination.Left + 0.5f;
-            uvs[id].min.Y = destination.Top + 0.5f;
-            uvs[id].max.X = destination.Right - 0.5f;
-            uvs[id].max.Y = destination.Bottom - 0.5f;
+            uvs[id].min = new Vector2(destination.Left, destination.Top);
+            uvs[id].max = new Vector2(destination.Right, destination.Bottom);
 
             uvs[id].min /= atlasSize;
             uvs[id].max /= atlasSize;
 
             //Color[] colors = new Color[width * height];
 
-            for (int y = 0; y < height; y++)
+            int padStart = Padding;
+            int padLength = Padding;
+
+            for (int y = -padStart; y < height + padLength; y++)
             {
-                for (int x = 0; x < width; x++)
+                for (int x = -padStart; x < width + padLength; x++)
                 {
+                    int readX = x;
+                    if (readX < 0) readX = 0;
+                    if (readX >= width) readX = width-1;
+                    int readY = y;
+                    if (readY < 0) readY = 0;
+                    if (readY >= height) readY = height-1;
+
                     int pageX = destination.X + x;
                     int pageY = destination.Y + y;
 
-                    int dataIndex = (x + (y * width)) * 3;
+                    int dataIndex = (readX + (readY * width)) * 3;
                     int colorIndex = (pageX + (pageY * atlasSize));
                     Color c = Color.White;
                     c.R = lightmapData[offset + dataIndex];
